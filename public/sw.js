@@ -1,4 +1,4 @@
-const CACHE = 'statusmon-v5.6.6';
+const CACHE = 'statusmon-v5.6.11';
 const FONTS_CACHE = 'statusmon-fonts-v1';
 const STATIC = ['/', '/status', '/manifest.json', '/icon-192.svg', '/icon-512.svg', '/icon-180.png'];
 

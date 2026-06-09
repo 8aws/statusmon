@@ -44,7 +44,7 @@ x-casaos:
       server stats without depending on any external service.
       No database, no registration, no telemetry. Data stored in ~/AppData/statusMon.
   developer: espiralvex
-  icon: https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/uptime-kuma.png
+  icon: https://raw.githubusercontent.com/8aws/statusmon/main/public/icon-512.png
   tagline:
     en_us: Monitor your services without depending on anyone.
   title:

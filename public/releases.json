@@ -11,7 +11,8 @@
         "Botón ⬇ para descargar cualquier backup como ZIP",
         "Botón Restaurar desde backup: sube un ZIP y restaura (reinicio automático)",
         "Migración entre instancias: descarga backup de origen, restaura en destino",
-        "Se crea backup automático del estado actual antes de restaurar"
+        "Se crea backup automático del estado actual antes de restaurar",
+        "Fix crítico: service worker sw.js tenía versión de caché hardcodeada v5.6.6 — el navegador servía archivos antiguos tras cada actualización"
       ],
       "downloadUrl": "https://github.com/8aws/statusmon/releases/download/v5.6.11/statusmon-v5.6.11.zip",
       "available": true,
