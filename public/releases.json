@@ -3,6 +3,19 @@
   "remoteUrl": "https://raw.githubusercontent.com/8aws/statusmon/main/public/releases.json",
   "releases": [
     {
+      "version": "5.6.12",
+      "date": "2026-06-09",
+      "title": "Fix descarga de backups (auth)",
+      "description": "El botón ⬇ de backup ahora usa fetch con token de autenticación en lugar de un enlace directo que devolvía 401.",
+      "highlights": [
+        "Fix: descarga de backup devolvía 401 Unauthorized"
+      ],
+      "downloadUrl": "https://github.com/8aws/statusmon/releases/download/v5.6.12/statusmon-v5.6.12.zip",
+      "available": true,
+      "size": 1245000,
+      "changelog": "https://github.com/8aws/statusmon/releases/tag/v5.6.12"
+    },
+    {
       "version": "5.6.11",
       "date": "2026-06-09",
       "title": "Descarga y restauración de backups",

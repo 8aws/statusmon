@@ -9,7 +9,7 @@ const { execSync } = require('child_process');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 
-const APP_VERSION = '5.6.11';
+const APP_VERSION = '5.6.12';
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const netCrypto = require('./network/crypto');
