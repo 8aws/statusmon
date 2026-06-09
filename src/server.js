@@ -7,9 +7,64 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 const crypto = require('crypto');
+const zlib = require('zlib');
+
+// ─── Pure-Node ZIP writer (no external `zip` binary needed) ───────
+const _CRC32_TABLE = (() => {
+  const t = new Uint32Array(256);
+  for (let i = 0; i < 256; i++) {
+    let c = i;
+    for (let j = 0; j < 8; j++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    t[i] = c;
+  }
+  return t;
+})();
+function _crc32(buf) {
+  let crc = 0xFFFFFFFF;
+  for (let i = 0; i < buf.length; i++) crc = _CRC32_TABLE[(crc ^ buf[i]) & 0xFF] ^ (crc >>> 8);
+  return (crc ^ 0xFFFFFFFF) >>> 0;
+}
+function buildZipBuffer(entries) {
+  // entries: [{name: string, data: Buffer}]
+  const local = [];
+  const cd = [];
+  let offset = 0;
+  const now = new Date();
+  const dosDate = (((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate()) & 0xFFFF;
+  const dosTime = ((now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1)) & 0xFFFF;
+  for (const { name, data } of entries) {
+    const nb = Buffer.from(name, 'utf8');
+    const comp = zlib.deflateRawSync(data, { level: 6 });
+    const crc  = _crc32(data);
+    // Local file header
+    const lh = Buffer.alloc(30 + nb.length);
+    lh.writeUInt32LE(0x04034b50, 0); lh.writeUInt16LE(20, 4); lh.writeUInt16LE(0, 6);
+    lh.writeUInt16LE(8, 8); lh.writeUInt16LE(dosTime, 10); lh.writeUInt16LE(dosDate, 12);
+    lh.writeUInt32LE(crc, 14); lh.writeUInt32LE(comp.length, 18); lh.writeUInt32LE(data.length, 22);
+    lh.writeUInt16LE(nb.length, 26); lh.writeUInt16LE(0, 28); nb.copy(lh, 30);
+    // Central directory entry
+    const ce = Buffer.alloc(46 + nb.length);
+    ce.writeUInt32LE(0x02014b50, 0); ce.writeUInt16LE(20, 4); ce.writeUInt16LE(20, 6);
+    ce.writeUInt16LE(0, 8); ce.writeUInt16LE(8, 10); ce.writeUInt16LE(dosTime, 12);
+    ce.writeUInt16LE(dosDate, 14); ce.writeUInt32LE(crc, 16); ce.writeUInt32LE(comp.length, 20);
+    ce.writeUInt32LE(data.length, 24); ce.writeUInt16LE(nb.length, 28); ce.writeUInt16LE(0, 30);
+    ce.writeUInt16LE(0, 32); ce.writeUInt16LE(0, 34); ce.writeUInt16LE(0, 36);
+    ce.writeUInt32LE(0, 38); ce.writeUInt32LE(offset, 42); nb.copy(ce, 46);
+    local.push(lh, comp);
+    cd.push(ce);
+    offset += lh.length + comp.length;
+  }
+  const cdBuf = Buffer.concat(cd);
+  const eocd  = Buffer.alloc(22);
+  eocd.writeUInt32LE(0x06054b50, 0); eocd.writeUInt16LE(0, 4); eocd.writeUInt16LE(0, 6);
+  eocd.writeUInt16LE(entries.length, 8); eocd.writeUInt16LE(entries.length, 10);
+  eocd.writeUInt32LE(cdBuf.length, 12); eocd.writeUInt32LE(offset, 16); eocd.writeUInt16LE(0, 20);
+  return Buffer.concat([...local, cdBuf, eocd]);
+}
+// ──────────────────────────────────────────────────────────────────
 const nodemailer = require('nodemailer');
 
-const APP_VERSION = '5.6.13';
+const APP_VERSION = '5.6.14';
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const netCrypto = require('./network/crypto');
@@ -1708,22 +1763,22 @@ app.get('/api/data/stats', (req, res) => {
 });
 
 // Delete old backups
-// GET /api/backups/:name/download — descarga backup como ZIP
+// GET /api/backups/:name/download — descarga backup como ZIP (pure Node.js, sin binario zip)
 app.get('/api/backups/:name/download', requireAuth, (req, res) => {
   const name = path.basename(req.params.name);
   const backupDir = path.join(BACKUPS_DIR, name);
   if (!fs.existsSync(backupDir)) return res.status(404).json({ error: 'Backup no encontrado' });
-  const tmpZip = path.join(BACKUPS_DIR, `_dl_${name}.zip`);
   try {
-    execSync(`cd "${BACKUPS_DIR}" && zip -r "${tmpZip}" "${name}/"`, { timeout: 30000 });
+    const entries = fs.readdirSync(backupDir)
+      .filter(f => fs.statSync(path.join(backupDir, f)).isFile())
+      .map(f => ({ name: `${name}/${f}`, data: fs.readFileSync(path.join(backupDir, f)) }));
+    if (entries.length === 0) return res.status(404).json({ error: 'Backup vacío' });
+    const zipBuf = buildZipBuffer(entries);
     res.setHeader('Content-Type', 'application/zip');
     res.setHeader('Content-Disposition', `attachment; filename="${name}.zip"`);
-    const stream = fs.createReadStream(tmpZip);
-    stream.pipe(res);
-    stream.on('close', () => { try { fs.unlinkSync(tmpZip); } catch {} });
-    stream.on('error', () => { try { fs.unlinkSync(tmpZip); } catch {} res.end(); });
+    res.setHeader('Content-Length', zipBuf.length);
+    res.end(zipBuf);
   } catch(e) {
-    try { fs.unlinkSync(tmpZip); } catch {}
     res.status(500).json({ error: e.message });
   }
 });

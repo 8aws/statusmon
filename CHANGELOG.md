@@ -5,6 +5,14 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 
 ---
 
+## [5.6.14] — 2026-06-09
+
+### Fixed
+- **Descarga de backups** — reescrita en Node.js puro (sin binario `zip` externo). Ya no genera `.zip.txt` de 9 bytes en Alpine. Compatible con todas las imágenes sin dependencias adicionales.
+- **Updater** — `downloadToFile()` sigue redirecciones 301/302/307/308 (GitHub Releases usa S3 via 302).
+
+---
+
 ## [5.6.11] — 2026-06-09
 
 ### Added
