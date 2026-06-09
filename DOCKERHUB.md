@@ -68,7 +68,7 @@ services:
         published: "3000"
         protocol: tcp
     volumes:
-      - $HOME/AppData/statusMon:/data
+      - /root/AppData/statusMon:/data
       - /proc:/host/proc:ro
 
 x-casaos:

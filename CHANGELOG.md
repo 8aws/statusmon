@@ -5,6 +5,16 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 
 ---
 
+## [5.6.9] — 2026-06-09
+
+### Fixed
+- **ZimaOS: ruta de datos corregida** — volumen usa `/root/AppData/statusMon` (ruta absoluta) en lugar de `$HOME/AppData/statusMon` que docker-compose no expande en Custom Install.
+- **ZimaOS: puerto fijo `3000`** — eliminada la sintaxis `${WEBUI_PORT:-3000}` que el parser de ZimaOS no soporta; se usa `3000` directamente.
+- **ZimaOS: `index: /admin`** — el icono de la app abre directamente el panel de administración.
+- **Status page: botón "Administrar" sin contraseña** — si no hay contraseña configurada, el botón redirige directamente a `/admin` sin mostrar el modal de login.
+
+---
+
 ## [5.6.8] — 2026-06-09
 
 ### Added
