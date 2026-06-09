@@ -2667,12 +2667,24 @@ async function loadSistemaTab(){
             <div style="font-size:10px;color:var(--muted)">${fmtSize(b.size)} · ${b.files} archivos · ${new Date(b.ts).toLocaleString('es')}</div>
           </div>
           <div style="display:flex;gap:6px;flex-shrink:0">
-            <a href="/api/backups/${encodeURIComponent(b.name)}/download" class="btn btn-sm" title="Descargar backup" style="text-decoration:none;padding:3px 8px;font-size:11px">⬇</a>
+            <button class="btn btn-sm" title="Descargar backup" style="padding:3px 8px;font-size:11px" onclick="downloadBackup('${b.name}')">⬇</button>
             <button class="icon-btn del" onclick="deleteBackup('${b.name}')" title="Eliminar este backup">✕</button>
           </div>
         </div>`).join('');
     }
   }catch{document.getElementById('backups-list').textContent='No disponible.';}
+}
+
+async function downloadBackup(name){
+  try{
+    const res=await apiFetch(`/api/backups/${encodeURIComponent(name)}/download`);
+    if(!res.ok){const e=await res.json().catch(()=>({}));alert('Error: '+(e.error||res.status));return;}
+    const blob=await res.blob();
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.download=name+'.zip';a.click();
+    setTimeout(()=>URL.revokeObjectURL(url),2000);
+  }catch(e){alert('Error al descargar: '+e.message);}
 }
 
 async function deleteBackup(name){
