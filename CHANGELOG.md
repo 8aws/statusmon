@@ -5,6 +5,17 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 
 ---
 
+## [5.6.10] — 2026-06-09
+
+### Changed
+- **Badge de actualización** — clic en el badge ↑ vX.Y abre ajustes, rellena la URL y descarga el ZIP automáticamente.
+- **Versión del header dinámica** — ya no hardcodeada; siempre muestra la versión real instalada.
+
+### Fixed
+- Header mostraba `v5.6.6` independientemente de la versión instalada.
+
+---
+
 ## [5.6.9] — 2026-06-09
 
 ### Fixed

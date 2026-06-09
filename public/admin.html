@@ -397,7 +397,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
       <rect x="13" y="20" width="3" height="5" rx="1" fill="#fff"/>
       <rect x="18" y="21" width="3" height="4" rx="1" fill="#fff" opacity=".8"/>
     </svg>
-    <div><h1>StatusMon</h1><small>v5.6.6 · uptime · perf · analytics</small></div>
+    <div><h1>StatusMon</h1><small id="headerVersion">uptime · perf · analytics</small></div>
   </a>
   <div class="header-right">
     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">
@@ -407,7 +407,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
     <button class="btn-icon" onclick="openSettings()" title="Ajustes">⚙</button>
     <a class="btn-icon" href="/status" target="_blank" title="Vista pública" style="text-decoration:none;display:flex;align-items:center;justify-content:center">↗</a>
     <a class="btn-icon" href="/about" title="Acerca de StatusMon" style="text-decoration:none;display:flex;align-items:center;justify-content:center;font-size:11px">?</a>
-    <span id="updateBadge" style="display:none;background:var(--warn2);border:1px solid var(--warn);color:var(--warn);padding:3px 9px;border-radius:10px;font-size:10px;font-family:var(--mono);cursor:pointer" onclick="location.href='/about#releases'"></span>
+    <span id="updateBadge" style="display:none;background:var(--warn2);border:1px solid var(--warn);color:var(--warn);padding:3px 9px;border-radius:10px;font-size:10px;font-family:var(--mono);cursor:pointer" onclick="quickUpdate()"></span>
     <button class="btn-icon" id="logoutBtn" onclick="logout()" title="Cerrar sesión" style="display:none">⏏</button>
     <button class="btn" onclick="openModal()">+ Añadir</button>
   </div>
@@ -2087,6 +2087,7 @@ async function checkForUpdates(){
     if(latest&&isNewer(latest,local.version)){
       el.style.display='';
       el.textContent='↑ v'+latest+' disponible';
+      el.dataset.url=allReleases[0]?.downloadUrl||'';
       el.title='Versión instalada: v'+local.version;
     } else {
       el.style.display='none';
@@ -2944,7 +2945,20 @@ window.addEventListener('resize',()=>{if(currentId)drawChart(getRangeHistory());
 loadUiCfg();
 initMetricsAccordion();
 initDragDrop();
+// ─── Quick update desde badge ────────────────────────────────────
+function quickUpdate(){
+  const badge=document.getElementById('updateBadge');
+  const url=badge&&badge.dataset&&badge.dataset.url?badge.dataset.url:'';
+  openSettings();
+  switchTab('sistema');
+  setTimeout(()=>{
+    const inp=document.getElementById('update-url');
+    if(inp&&url){inp.value=url;fetchUpdate();}
+  },300);
+}
+
 checkAuth();
+fetch('/api/version').then(r=>r.json()).then(d=>{const el=document.getElementById('headerVersion');if(el)el.textContent='v'+d.version+' · uptime · perf · analytics';}).catch(()=>{});
 loadAuthStatus();
 fetchAll().then(()=>{countdown=checkIntervalSec;scheduleNasRefresh(serverCfg.nasRefreshInterval||30);});
 // Show keyboard shortcut toggle after load

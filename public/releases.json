@@ -3,6 +3,21 @@
   "remoteUrl": "https://raw.githubusercontent.com/8aws/statusmon/main/public/releases.json",
   "releases": [
     {
+      "version": "5.6.10",
+      "date": "2026-06-09",
+      "title": "Badge de update → actualización directa; versión dinámica en header",
+      "description": "El badge ↑ vX.Y disponible abre ajustes y descarga automáticamente el ZIP de GitHub. Versión en el header siempre refleja la instalada. Fix de versión hardcodeada v5.6.6.",
+      "highlights": [
+        "Badge de nueva versión → un clic descarga e inicia la actualización",
+        "Versión en header dinámica (ya no hardcodeada)",
+        "Fix: versión mostraba v5.6.6 independientemente de la instalada"
+      ],
+      "downloadUrl": "https://github.com/8aws/statusmon/releases/download/v5.6.10/statusmon-v5.6.10.zip",
+      "available": true,
+      "size": 1244000,
+      "changelog": "https://github.com/8aws/statusmon/releases/tag/v5.6.10"
+    },
+    {
       "version": "5.6.9",
       "date": "2026-06-09",
       "title": "Fix ZimaOS — rutas, puerto y login sin contraseña",
