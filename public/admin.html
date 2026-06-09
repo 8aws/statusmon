@@ -93,9 +93,9 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
 .section-title{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em}
 .site-row{background:var(--s1);border:1px solid var(--border);border-radius:9px;padding:10px 14px;margin-bottom:7px;display:grid;grid-template-columns:18px 9px 1fr 120px 85px 85px 80px auto;align-items:center;gap:10px;cursor:pointer;transition:border-color .15s,background .15s;border-left:3px solid transparent}
 .site-row:hover,.site-row:active{border-color:var(--border2);background:var(--s2)}
-.site-row.is-up{border-left-color:var(--up)}.site-row.is-down{border-left-color:var(--down)}.site-row.is-unknown{border-left-color:var(--muted)}.site-row.is-paused{border-left-color:var(--muted);opacity:.6}
+.site-row.is-up{border-left-color:var(--up)}.site-row.is-down{border-left-color:var(--down)}.site-row.is-unknown{border-left-color:var(--muted)}.site-row.is-paused{border-left-color:var(--muted);opacity:.6}.site-row.is-degraded{border-left-color:var(--warn)}
 .dot{width:7px;height:7px;border-radius:50%;background:var(--muted);flex-shrink:0}
-.dot.up{background:var(--up);box-shadow:0 0 6px var(--up)}.dot.down{background:var(--down);box-shadow:0 0 6px var(--down);animation:pulse 1.5s infinite}.dot.paused{background:var(--muted)}
+.dot.up{background:var(--up);box-shadow:0 0 6px var(--up)}.dot.down{background:var(--down);box-shadow:0 0 6px var(--down);animation:pulse 1.5s infinite}.dot.paused{background:var(--muted)}.dot.degraded{background:var(--warn);box-shadow:0 0 6px var(--warn);animation:pulse 2.5s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 .site-info .name{font-family:var(--sans);font-weight:600;font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
 .site-info .url{font-size:10px;color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -579,7 +579,9 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
   <div class="pct-grid" id="d-pctTtfb" style="margin-bottom:16px"></div>
   <div class="sg sg-2" id="d-row1" style="margin-bottom:8px"></div>
   <div class="sg sg-2" id="d-row2" style="margin-bottom:8px"></div>
-  <div class="sg sg-2" id="d-row3" style="margin-bottom:16px"></div>
+  <div class="sg sg-2" id="d-row3" style="margin-bottom:8px"></div>
+  <!-- Heatmap 7d×24h -->
+  <div id="d-heatmap" style="display:none;margin-bottom:8px"></div>
   <!-- Timeline de incidencias -->
   <div class="chart-card" id="d-timelineCard" style="display:none;margin-bottom:16px">
     <div class="chart-title" style="margin-bottom:10px">
@@ -1199,6 +1201,20 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
           </div>
           <div class="field"><label>URL del webhook</label><input id="e-wh-url" class="setting-input full" placeholder="https://..."></div>
           <div class="field" id="e-wh-tg-field" style="display:none"><label>Telegram Chat ID</label><input id="e-wh-tg-chatid" class="setting-input full" placeholder="-100123456789"></div>
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-section-title">Verificación de contenido</div>
+        <div class="setting-row">
+          <div><div class="setting-label">Verificar contenido de respuesta</div><div class="setting-sub">Si el texto no aparece en la respuesta, se marca como caído</div></div>
+          <label class="toggle"><input type="checkbox" id="e-cc-enabled" onchange="document.getElementById('e-cc-fields').style.display=this.checked?'block':'none'"><span class="toggle-slider"></span></label>
+        </div>
+        <div id="e-cc-fields" style="display:none;margin-top:8px">
+          <div class="field">
+            <label>Texto requerido en la respuesta</label>
+            <input id="e-cc-text" class="setting-input full" placeholder='p.ej: "ok", "status":"healthy"'>
+            <small style="color:var(--muted);font-size:10px">Comprobación simple de subcadena. Para JSON usa el fragmento exacto.</small>
+          </div>
         </div>
       </div>
     </div>
@@ -2243,8 +2259,9 @@ function renderSiteRow(site){
   const isPaused=site.paused;
   const isPrivate=site.public===false;
   const isUp=s?.up;
-  const cls=isPaused?'is-paused':isUp==null?'is-unknown':isUp?'is-up':'is-down';
-  const dotCls=isPaused?'paused':isUp==null?'':isUp?'up':'down';
+  const isDegraded=isUp&&s?.degraded;
+  const cls=isPaused?'is-paused':isUp==null?'is-unknown':isDegraded?'is-degraded':isUp?'is-up':'is-down';
+  const dotCls=isPaused?'paused':isUp==null?'':isDegraded?'degraded':isUp?'up':'down';
   const rt=s?.responseTime??null;const ttfb=s?.ttfb??null;
   const upPct=st?.uptime24h??st?.uptimePct??null;
   const ssl=st?.lastSsl??s?.ssl??null;
@@ -2321,6 +2338,11 @@ function editSite(id,e){
   document.getElementById('e-wh-url').value=wh.url||'';
   document.getElementById('e-wh-tg-chatid').value=wh.chatId||'';
   toggleEditWhFields();
+  // Content check
+  const cc=site.contentCheck||{};
+  document.getElementById('e-cc-enabled').checked=!!cc.enabled;
+  document.getElementById('e-cc-text').value=cc.text||'';
+  document.getElementById('e-cc-fields').style.display=cc.enabled?'block':'none';
   // Maintenance tab
   renderMaintWindows();
   // Botón copiar URL ping para heartbeat
@@ -2434,6 +2456,10 @@ async function saveEditSite(){
       chatId:document.getElementById('e-wh-tg-chatid').value.trim(),
     },
     maintenanceWindows:_editMaintWindows,
+    contentCheck:{
+      enabled:document.getElementById('e-cc-enabled').checked,
+      text:document.getElementById('e-cc-text').value.trim(),
+    },
   };
   if(!payload.name||!payload.url){alert('El nombre y la URL son obligatorios.');return;}
   await apiFetch(`/api/sites/${_editId}`,{method:'PUT',headers:authHeaders(),body:JSON.stringify(payload)});
@@ -2477,9 +2503,10 @@ function renderDetail(){
   pauseBtn.textContent=isPaused?'▶ Reanudar':'⏸ Pausar';
 
   const dot=document.getElementById('d-dot');
-  dot.className='dot '+(isPaused?'paused':s?.up?'up':s?.up===false?'down':'');
-  document.getElementById('d-statusText').textContent=isPaused?'Pausado':s?.up?'Operativo':s?.up===false?'CAÍDO':'–';
-  document.getElementById('d-statusText').style.color=isPaused?'var(--muted)':s?.up?'var(--up)':s?.up===false?'var(--down)':'var(--muted)';
+  const isDeg=s?.up&&s?.degraded;
+  dot.className='dot '+(isPaused?'paused':isDeg?'degraded':s?.up?'up':s?.up===false?'down':'');
+  document.getElementById('d-statusText').textContent=isPaused?'Pausado':isDeg?'Degradado':s?.up?'Operativo':s?.up===false?'CAÍDO':'–';
+  document.getElementById('d-statusText').style.color=isPaused?'var(--muted)':isDeg?'var(--warn)':s?.up?'var(--up)':s?.up===false?'var(--down)':'var(--muted)';
   document.getElementById('d-code').textContent=s?.statusCode?`HTTP ${s.statusCode}`:s?.error||'';
 
   document.getElementById('d-uptimeRow').innerHTML=`
@@ -2494,6 +2521,11 @@ function renderDetail(){
   const stack=st?.lastStack;const ssl=st?.lastSsl;
   const secBadges=stack?[['HSTS',stack.strictTransport],['X-Frame',!!stack.xFrameOptions],['X-Content-Type',!!stack.xContentTypeOptions],['CSP',!!stack.contentSecurityPolicy],['Referrer',!!stack.referrerPolicy]].map(([n,v])=>`<span class="sec-badge ${v?'on':'off'}" title="${v?'Presente':'Faltante'}">${n}</span>`).join(''):'–';
 
+  const anomaly=s?.anomaly;
+  const anomalyHtml=anomaly?`<div class="ir" style="background:rgba(255,170,0,.08);border-radius:6px;padding:5px 7px;margin-top:4px">
+    <div class="ik" style="color:var(--warn)">⚠ Anomalía</div>
+    <div class="iv" style="color:var(--warn);font-size:10px">+${anomaly.zScore}σ · ${fmt(anomaly.current)} vs media ${fmt(anomaly.mean)}</div>
+  </div>`:'';
   document.getElementById('d-row1').innerHTML=`
     <div class="ic"><h3>Rendimiento</h3>
       <div class="ir"><div class="ik">Media (mean)</div><div class="iv">${fmt(st?.mean)}</div></div>
@@ -2502,6 +2534,7 @@ function renderDetail(){
       <div class="ir"><div class="ik">Más rápido</div><div class="iv g">${fmt(st?.fastest)}</div></div>
       <div class="ir"><div class="ik">Más lento</div><div class="iv ${st?.slowest>3000?'r':st?.slowest>1000?'y':''}">${fmt(st?.slowest)}</div></div>
       <div class="ir"><div class="ik">Tamaño respuesta</div><div class="iv">${fmtBytes(st?.avgSize)}</div></div>
+      ${anomalyHtml}
     </div>
     <div class="ic"><h3>Incidencias</h3>
       <div class="ir"><div class="ik">Caídas totales</div><div class="iv ${st?.outageCount>0?'r':''}">${st?.outageCount??0}</div></div>
@@ -2512,6 +2545,14 @@ function renderDetail(){
       <div class="ir"><div class="ik">Checks totales</div><div class="iv">${st?.total??'–'}</div></div>
     </div>`;
 
+  const redirects=s?.redirects;
+  const redirectHtml=redirects&&redirects.length>0?`
+    <div class="ir" style="flex-direction:column;align-items:flex-start;gap:3px">
+      <div class="ik">Cadena de redirecciones (${redirects.length} saltos)</div>
+      ${redirects.map((r,i)=>`<div style="font-size:10px;font-family:var(--mono);color:${i===redirects.length-1?'var(--up)':'var(--muted)'};padding-left:8px;word-break:break-all">
+        ${i===redirects.length-1?'✓':'→'} <span style="color:${r.status<300?'var(--up)':r.status<400?'var(--warn)':'var(--down)'}">${r.status}</span> ${r.url} <span style="color:var(--muted)">${r.ms}ms</span>
+      </div>`).join('')}
+    </div>`:'';
   document.getElementById('d-row2').innerHTML=`
     <div class="ic"><h3>Stack detectado</h3>
       <div class="ir"><div class="ik">Software</div><div class="iv">${stack?.clues?.join(' · ')||'–'}</div></div>
@@ -2520,6 +2561,11 @@ function renderDetail(){
       <div class="ir"><div class="ik">Content-Type</div><div class="iv">${stack?.contentType||'–'}</div></div>
       <div class="ir"><div class="ik">Compresión</div><div class="iv">${stack?.encoding||'ninguna'}</div></div>
       <div class="ir"><div class="ik">Cache-Control</div><div class="iv">${stack?.cacheInfo?.join(', ')||stack?.cacheControl||'–'}</div></div>
+      <div class="ir"><div class="ik">X-Cache</div><div class="iv">${stack?.xCache||stack?.xCacheStatus||'–'}</div></div>
+      ${stack?.cfRay?`<div class="ir"><div class="ik">CF-Ray</div><div class="iv" style="font-family:var(--mono);font-size:10px">${stack.cfRay}</div></div>`:''}
+      ${stack?.age!=null?`<div class="ir"><div class="ik">Age (caché CDN)</div><div class="iv">${stack.age}s</div></div>`:''}
+      ${stack?.via?`<div class="ir"><div class="ik">Via</div><div class="iv" style="font-size:10px">${stack.via}</div></div>`:''}
+      ${redirectHtml}
     </div>
     <div class="ic">
       <h3>Seguridad &amp; SSL <span style="font-size:10px;font-family:var(--mono);font-weight:400">${stack?.securityScore??0}/5</span></h3>
@@ -2528,8 +2574,7 @@ function renderDetail(){
       <div class="ir"><div class="ik">Emisor</div><div class="iv">${ssl.issuer||'–'}</div></div>
       <div class="ir"><div class="ik">CN</div><div class="iv">${ssl.subject||'–'}</div></div>`
       :`<div class="ir"><div class="ik">SSL</div><div class="iv" style="color:var(--muted)">HTTP o no disponible</div></div>`}
-      <div class="ir"><div class="ik">X-Cache</div><div class="iv">${stack?.xCache||'–'}</div></div>
-      <div class="ir"><div class="ik">Cabeceras</div><div class="iv"><div class="sec-grid">${secBadges}</div></div></div>
+      <div class="ir"><div class="ik">Cabeceras seguridad</div><div class="iv"><div class="sec-grid">${secBadges}</div></div></div>
       ${securityAdviceHtml(stack)}
     </div>`;
 
@@ -2539,10 +2584,70 @@ function renderDetail(){
     <div class="ic"><h3>Distribución códigos HTTP</h3><div class="code-bars" style="margin-top:4px">${codeHtml}</div></div>
     <div class="ic"><h3>Tipos de error</h3>${errHtml}</div>`;
 
+  renderHeatmap(h);
   showDiagBanner(s);
   currentHistory=h;
   _histShowAll=false;
   refreshRangeView();
+}
+
+// ─── Heatmap 7d × 24h ─────────────────────────────────────────────
+function renderHeatmap(hist) {
+  const el = document.getElementById('d-heatmap');
+  if (!hist || hist.length < 50) { el.style.display = 'none'; return; }
+  const DAYS = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+  const cells = Array.from({length:7}, () => Array.from({length:24}, () => ({sum:0, n:0, down:0})));
+  for (const e of hist) {
+    const d = new Date(e.ts);
+    const day = (d.getDay() + 6) % 7;
+    const hour = d.getHours();
+    cells[day][hour].n++;
+    if (!e.up) cells[day][hour].down++;
+    else if (e.responseTime) cells[day][hour].sum += e.responseTime;
+  }
+  let maxAvg = 1;
+  const data = cells.map(row => row.map(c => {
+    if (!c.n) return null;
+    const upN = c.n - c.down;
+    const avg = upN > 0 ? c.sum / upN : 0;
+    if (avg > maxAvg) maxAvg = avg;
+    return { avg: Math.round(avg), n: c.n, downPct: Math.round(c.down / c.n * 100) };
+  }));
+  const getColor = d => {
+    if (!d) return 'var(--s2)';
+    if (d.downPct > 50) return 'rgba(224,50,80,.75)';
+    if (d.downPct > 10) return 'rgba(255,170,0,.65)';
+    const r = d.avg / maxAvg;
+    const R = Math.round(60 + r*200), G = Math.round(220 - r*140), B = Math.round(100 - r*60);
+    return `rgba(${R},${G},${B},.72)`;
+  };
+  el.style.display = '';
+  el.innerHTML = `<div class="chart-card">
+    <div class="chart-title"><span>🗓 Heatmap disponibilidad</span><span style="font-size:10px;color:var(--muted)">7 días × 24 horas — color = tiempo de respuesta</span></div>
+    <div style="overflow-x:auto;margin-top:6px">
+    <table style="border-collapse:collapse;font-size:9px;font-family:var(--mono)">
+      <thead><tr>
+        <td style="width:28px;min-width:28px"></td>
+        ${Array.from({length:24},(_,i)=>`<td style="text-align:center;width:20px;min-width:20px;color:var(--muted);padding-bottom:3px">${i%6===0?i+'h':''}</td>`).join('')}
+      </tr></thead>
+      <tbody>
+        ${DAYS.map((day,di)=>`<tr>
+          <td style="padding-right:5px;color:var(--muted);white-space:nowrap;font-size:9px;text-align:right">${day}</td>
+          ${Array.from({length:24},(_,hi)=>{
+            const d=data[di][hi];
+            const bg=getColor(d);
+            const tip=d?`${day} ${hi}h — ${d.avg?d.avg+'ms avg':d.downPct+'% caídas'}, ${d.n} checks`:'Sin datos';
+            return`<td title="${tip}" style="width:20px;height:18px;background:${bg};border:1px solid rgba(128,128,128,.1);border-radius:2px;cursor:default"></td>`;
+          }).join('')}
+        </tr>`).join('')}
+      </tbody>
+    </table>
+    <div style="margin-top:7px;display:flex;align-items:center;gap:7px;font-size:9px;color:var(--muted)">
+      <span>Rápido</span>${['rgba(60,220,100,.72)','rgba(130,190,80,.72)','rgba(180,160,65,.72)','rgba(230,100,55,.72)','rgba(224,50,80,.75)'].map(c=>`<div style="width:16px;height:11px;background:${c};border-radius:2px;flex-shrink:0"></div>`).join('')}<span>Lento / caídas</span>
+      <div style="width:16px;height:11px;background:var(--s2);border:1px solid var(--border);border-radius:2px;flex-shrink:0"></div><span>Sin datos</span>
+    </div>
+    </div>
+  </div>`;
 }
 
 // ─── Pct grid ──────────────────────────────────────────────────────

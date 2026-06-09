@@ -3,6 +3,23 @@
   "remoteUrl": "https://raw.githubusercontent.com/8aws/statusmon/main/public/releases.json",
   "releases": [
     {
+      "version": "5.6.15",
+      "date": "2026-06-09",
+      "title": "Análisis avanzado — heatmap, anomaly detection, redirect chain, content check",
+      "description": "Heatmap de disponibilidad 7d×24h, detección automática de anomalías (z-score), cadena de redirecciones con tiempos por salto, verificación de contenido por sitio, y cabeceras CDN enriquecidas (CF-Ray, Age, Via).",
+      "highlights": [
+        "Heatmap 7 días × 24 horas con escala de color por tiempo de respuesta",
+        "Anomaly detection: marca 'Degradado' cuando respuesta supera media+2.5σ",
+        "Redirect chain: visualiza cada salto HTTP con URL, código y tiempo",
+        "Content check por sitio: texto requerido en la respuesta (si falta = caído)",
+        "Cabeceras HTTP enriquecidas: CF-Ray, Age, Via, X-Cache-Status"
+      ],
+      "downloadUrl": "https://github.com/8aws/statusmon/releases/download/v5.6.15/statusmon-v5.6.15.zip",
+      "available": true,
+      "size": 1252000,
+      "changelog": "https://github.com/8aws/statusmon/releases/tag/v5.6.15"
+    },
+    {
       "version": "5.6.14",
       "date": "2026-06-09",
       "title": "Fix descarga de backups — ZIP puro Node.js sin binario externo",

@@ -64,7 +64,7 @@ function buildZipBuffer(entries) {
 // ──────────────────────────────────────────────────────────────────
 const nodemailer = require('nodemailer');
 
-const APP_VERSION = '5.6.14';
+const APP_VERSION = '5.6.15';
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const netCrypto = require('./network/crypto');
@@ -485,6 +485,10 @@ function detectStack(headers) {
     encoding: enc||null, cacheControl: cc||null, cacheInfo,
     contentLength: headers['content-length']?parseInt(headers['content-length']):null,
     xCache: h['x-cache']||null,
+    xCacheStatus: h['x-cache-status']||null,
+    cfRay: h['cf-ray']||null,
+    age: h['age']!=null?parseInt(h['age']):null,
+    via: h['via']||null,
     strictTransport: !!h['strict-transport-security'],
     xFrameOptions: h['x-frame-options']||null,
     xContentTypeOptions: h['x-content-type-options']||null,
@@ -606,36 +610,76 @@ function checkHeartbeat(site) {
 function checkHttp(site) {
   return new Promise(async (resolve) => {
     const start = Date.now();
-    const url = new URL(site.url);
-    const isHttps = url.protocol === 'https:';
-    const lib = isHttps ? https : http;
-    const timeout = site.timeout || (loadConfig().defaultTimeout||10)*1000;
+    const timeout = site.timeout || (loadConfig().defaultTimeout || 10) * 1000;
+    let firstUrl;
+    try { firstUrl = new URL(site.url); } catch(e) { return resolve({ up: false, responseTime: 0, ttfb: null, statusCode: null, error: 'URL inválida', bodySize: null, stack: null, ssl: null, checkType: 'http', redirects: null }); }
+    const sslPromise = firstUrl.protocol === 'https:' ? getSSLExpiry(firstUrl.hostname, firstUrl.port || 443) : Promise.resolve(null);
+
+    // Follow redirects manually to capture chain
+    const redirectChain = [];
     let ttfb = null;
-    const sslPromise = isHttps ? getSSLExpiry(url.hostname, url.port||443) : Promise.resolve(null);
-    const req = lib.request({
-      hostname: url.hostname, port: url.port||(isHttps?443:80),
-      path: url.pathname+url.search, method: 'GET', timeout,
-      headers: { 'User-Agent': 'StatusMon/1.0', 'Accept': '*/*', 'Accept-Encoding': 'gzip, br' },
-      rejectUnauthorized: false,
-    }, async (res) => {
-      ttfb = Date.now() - start;
-      let bodyLen = 0;
-      res.on('data', chunk => { bodyLen += chunk.length; });
-      res.on('end', async () => {
-        const totalTime = Date.now() - start;
-        const up = res.statusCode < 400;
-        const stack = detectStack(res.headers);
-        const ssl = await sslPromise;
-        resolve({ up, responseTime: totalTime, ttfb, statusCode: res.statusCode, error: null, bodySize: stack.contentLength||bodyLen, stack, ssl, checkType: 'http' });
+    const needsBody = !!(site.contentCheck?.enabled && site.contentCheck?.text);
+
+    const doHop = (url, depth) => new Promise((ok, fail) => {
+      if (depth > 10) return fail(new Error('Demasiadas redirecciones'));
+      let u;
+      try { u = new URL(url); } catch(e) { return fail(new Error('URL inválida: ' + url)); }
+      const isHttps = u.protocol === 'https:';
+      const lib2 = isHttps ? https : http;
+      const hopStart = Date.now();
+      const req = lib2.request({
+        hostname: u.hostname, port: u.port || (isHttps ? 443 : 80),
+        path: u.pathname + u.search || '/', method: 'GET', timeout,
+        headers: { 'User-Agent': 'StatusMon/1.0', 'Accept': '*/*', 'Accept-Encoding': 'identity' },
+        rejectUnauthorized: false,
+      }, (res) => {
+        if (depth === 0) ttfb = Date.now() - start;
+        if ([301, 302, 303, 307, 308].includes(res.statusCode) && res.headers.location) {
+          redirectChain.push({ url, status: res.statusCode, ms: Date.now() - hopStart });
+          res.resume();
+          let next = res.headers.location;
+          if (!next.startsWith('http')) next = new URL(next, url).href;
+          doHop(next, depth + 1).then(ok).catch(fail);
+        } else {
+          ok({ res, url, hopStart });
+        }
       });
-      res.resume();
+      req.on('timeout', () => { req.destroy(); fail(new Error('Timeout')); });
+      req.on('error', fail);
+      req.end();
     });
-    req.on('timeout', () => { req.destroy(); resolve({ up: false, responseTime: timeout, ttfb: null, statusCode: null, error: 'Timeout', bodySize: null, stack: null, ssl: null, checkType: 'http' }); });
-    req.on('error', async (e) => {
-      const ssl = isHttps ? await sslPromise : null;
-      resolve({ up: false, responseTime: Date.now()-start, ttfb: null, statusCode: null, error: e.message, bodySize: null, stack: null, ssl, checkType: 'http' });
-    });
-    req.end();
+
+    try {
+      const { res, url: finalUrl, hopStart } = await doHop(site.url, 0);
+      let bodyLen = 0, bodyText = '';
+      await new Promise(done => {
+        res.on('data', chunk => {
+          bodyLen += chunk.length;
+          if (needsBody && bodyText.length < 200000) bodyText += chunk.toString('utf8', 0, Math.min(chunk.length, 200000 - bodyText.length));
+        });
+        res.on('end', done);
+        res.on('error', done);
+      });
+      const totalTime = Date.now() - start;
+      const httpOk = res.statusCode < 400;
+      let up = httpOk, error = null;
+      if (up && needsBody) {
+        const found = bodyText.includes(site.contentCheck.text);
+        if (!found) { up = false; error = `Contenido no encontrado: "${site.contentCheck.text.slice(0, 60)}"`; }
+      }
+      if (redirectChain.length > 0) redirectChain.push({ url: finalUrl, status: res.statusCode, ms: Date.now() - hopStart });
+      const stack = detectStack(res.headers);
+      const ssl = await sslPromise;
+      resolve({
+        up, responseTime: totalTime, ttfb, statusCode: res.statusCode, error,
+        bodySize: stack.contentLength || bodyLen, stack, ssl, checkType: 'http',
+        redirects: redirectChain.length > 0 ? redirectChain : null,
+        contentCheck: needsBody ? { ok: !error } : null,
+      });
+    } catch(e) {
+      const ssl = await sslPromise.catch(() => null);
+      resolve({ up: false, responseTime: Date.now() - start, ttfb: null, statusCode: null, error: e.message, bodySize: null, stack: null, ssl, checkType: 'http', redirects: redirectChain.length > 0 ? redirectChain : null });
+    }
   });
 }
 
@@ -1025,6 +1069,25 @@ function scheduleChecks() {
 // Per-site last-checked timestamps (in-memory)
 const _lastCheckedAt = {};
 
+// ─── Anomaly detection ────────────────────────────────────────────
+function detectAnomaly(hist) {
+  // Need at least 30 successful checks to establish baseline
+  const recent = (hist || []).slice(-288).filter(e => e.up && e.responseTime > 0);
+  if (recent.length < 30) return null;
+  const times = recent.map(e => e.responseTime);
+  const mean = times.reduce((a, b) => a + b, 0) / times.length;
+  const variance = times.reduce((a, b) => a + (b - mean) ** 2, 0) / times.length;
+  const stddev = Math.sqrt(variance);
+  // Only flag if stddev is meaningful (not all identical values)
+  if (stddev < 10) return null;
+  const latest = times[times.length - 1];
+  const zScore = (latest - mean) / stddev;
+  if (zScore > 2.5) {
+    return { mean: Math.round(mean), stddev: Math.round(stddev), current: latest, zScore: zScore.toFixed(1) };
+  }
+  return null;
+}
+
 // ─── Maintenance windows helper ────────────────────────────────────
 function inMaintenanceWindow(site) {
   if (!site.maintenanceWindows?.length) return false;
@@ -1055,9 +1118,8 @@ async function runChecks() {
       result = await checkSite(site);
     }
     const ts = Date.now();
-    status[site.id] = { ...result, lastCheck: ts, name: site.name, url: site.url, id: site.id, paused: false };
     if (!history[site.id]) history[site.id] = [];
-    const entry = { ts, up: result.up, responseTime: result.responseTime, ttfb: result.ttfb, statusCode: result.statusCode, error: result.error, bodySize: result.bodySize, stack: result.stack, ssl: result.ssl };
+    const entry = { ts, up: result.up, responseTime: result.responseTime, ttfb: result.ttfb, statusCode: result.statusCode, error: result.error, bodySize: result.bodySize, stack: result.stack, ssl: result.ssl, redirects: result.redirects || null };
     if (shouldRecordEntry(site.id, entry)) {
       history[site.id].push(entry);
       _lastEntryKey[site.id] = { up: result.up, responseTime: result.responseTime };
@@ -1065,6 +1127,8 @@ async function runChecks() {
       if (history[site.id].length > maxH) history[site.id] = history[site.id].slice(-maxH);
       markHistoryDirty();
     }
+    const anomaly = detectAnomaly(history[site.id]);
+    status[site.id] = { ...result, lastCheck: ts, name: site.name, url: site.url, id: site.id, paused: false, degraded: !!anomaly, anomaly };
     await handleAlerts(site, result);
     // Auto-diagnose on first down detection
     if (!result.up && (!diagCache[site.id] || diagCache[site.id].ts < Date.now() - 300000)) {

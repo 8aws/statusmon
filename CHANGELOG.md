@@ -5,6 +5,17 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 
 ---
 
+## [5.6.15] — 2026-06-09
+
+### Added
+- **Heatmap de disponibilidad** — grid 7 días × 24 horas coloreado por tiempo de respuesta medio. Revela patrones temporales (degradación nocturna, picos por hora). Se muestra en el panel de detalle de cada sitio cuando hay suficiente historial.
+- **Anomaly detection** — el servidor calcula z-score sobre las últimas 288 comprobaciones. Si el tiempo actual supera media+2.5σ, el sitio se marca como *Degradado* (dot naranja, texto "Degradado") sin necesidad de configurar umbrales manuales.
+- **Redirect chain** — `checkHttp` sigue los saltos HTTP/HTTPS manualmente, capturando URL, código de estado y tiempo de cada redirect. Se visualiza en el panel de detalle con flechas y colores.
+- **Verificación de contenido** — nueva opción por sitio en Ajustes → Avanzado: si el texto requerido no aparece en la respuesta, se marca como caído (útil para detectar errores 200 con página de error).
+- **Cabeceras CDN ampliadas** — `detectStack` captura y muestra `CF-Ray`, `Age`, `Via`, `X-Cache-Status` en el panel de detalle.
+
+---
+
 ## [5.6.14] — 2026-06-09
 
 ### Fixed
