@@ -65,7 +65,7 @@ services:
       - DATA_DIR=/data
     ports:
       - target: 3000
-        published: "${WEBUI_PORT:-3000}"
+        published: "3000"
         protocol: tcp
     volumes:
       - $HOME/AppData/statusMon:/data
@@ -77,7 +77,7 @@ x-casaos:
     en_us: StatusMon
   category: Network
   index: /admin
-  port_map: "${WEBUI_PORT:-3000}"
+  port_map: "3000"
 ```
 
 ---

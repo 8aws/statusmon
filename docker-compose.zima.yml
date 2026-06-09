@@ -18,7 +18,7 @@ services:
       - DATA_DIR=/data
     ports:
       - target: 3000
-        published: "${WEBUI_PORT:-3000}"
+        published: "3000"
         protocol: tcp
     volumes:
       # ZimaOS 1.6.x: AppData vive bajo ~/AppData/ (/root/AppData/ en disco)
@@ -55,4 +55,4 @@ x-casaos:
         First launch: open /admin to set your admin password.
         Data is stored in ~/AppData/statusMon on your ZimaOS.
   index: /admin
-  port_map: "${WEBUI_PORT:-3000}"
+  port_map: "3000"
