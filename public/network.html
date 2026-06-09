@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#080b14">
+<meta name="description" content="StatusMon Network — red colaborativa de monitorización distribuida">
+<title>StatusMon · Red Global</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#080b14;--ink1:#0d1220;--ink2:#121826;
+  --wire:#1a2235;--wire2:#243050;
+  --pulse:#00ffa3;--pulse2:rgba(0,255,163,.08);--pulse3:rgba(0,255,163,.15);
+  --signal:#4d7cff;--signal2:rgba(77,124,255,.1);
+  --warn:#ff6b35;--dim:#3a4a6b;--fog:#6b7a99;
+  --text:#d4daf0;--bright:#eef2ff;
+  --mono:'Space Mono',monospace;--display:'Syne',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--ink);color:var(--text);font-family:var(--mono);min-height:100vh;overflow-x:hidden}
+
+/* ── Grid bg ── */
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(77,124,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(77,124,255,.04) 1px,transparent 1px);
+  background-size:40px 40px;
+  pointer-events:none;z-index:0;
+}
+body::after{
+  content:'';position:fixed;inset:0;
+  background:radial-gradient(ellipse at 50% 0%,rgba(0,255,163,.06) 0%,transparent 60%),
+             radial-gradient(ellipse at 80% 80%,rgba(77,124,255,.07) 0%,transparent 50%);
+  pointer-events:none;z-index:0;
+}
+
+.wrap{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:0 24px 80px}
+
+/* ── Nav ── */
+nav{display:flex;align-items:center;justify-content:space-between;padding:20px 0;margin-bottom:60px}
+.nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo-mark{width:26px;height:26px;background:linear-gradient(135deg,var(--signal),var(--pulse));border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.nav-title{font-family:var(--display);font-size:15px;font-weight:800;color:var(--bright);letter-spacing:-.3px}
+.nav-sub{font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.15em;display:block}
+.nav-links{display:flex;gap:20px;align-items:center}
+.nav-link{font-size:10px;color:var(--fog);text-decoration:none;text-transform:uppercase;letter-spacing:.1em;transition:.15s}
+.nav-link:hover{color:var(--pulse)}
+.nav-link.active{color:var(--pulse)}
+
+/* ── Hero ── */
+.hero{text-align:center;padding:0 0 60px;position:relative}
+.hero-label{display:inline-flex;align-items:center;gap:7px;font-size:10px;color:var(--pulse);text-transform:uppercase;letter-spacing:.2em;margin-bottom:24px}
+.hero-label::before,.hero-label::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--pulse3))}
+.hero-label::after{background:linear-gradient(270deg,transparent,var(--pulse3))}
+.hero h1{font-family:var(--display);font-size:clamp(36px,7vw,72px);font-weight:800;color:var(--bright);line-height:.95;letter-spacing:-2px;margin-bottom:20px}
+.hero h1 em{font-style:normal;color:var(--pulse)}
+.hero-desc{font-size:13px;color:var(--fog);max-width:480px;margin:0 auto 40px;line-height:1.7}
+.live-indicator{display:inline-flex;align-items:center;gap:6px;font-size:10px;color:var(--fog);text-transform:uppercase;letter-spacing:.12em}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--pulse);box-shadow:0 0 8px var(--pulse);animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1;box-shadow:0 0 8px var(--pulse)}50%{opacity:.3;box-shadow:none}}
+
+/* ── Global counters ── */
+.counters{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--wire);border:1px solid var(--wire);border-radius:12px;overflow:hidden;margin-bottom:60px}
+.counter{background:var(--ink1);padding:24px 20px;position:relative;overflow:hidden}
+.counter::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--signal2),transparent)}
+.counter-val{font-family:var(--display);font-size:36px;font-weight:800;color:var(--bright);line-height:1;margin-bottom:6px}
+.counter-val.green{color:var(--pulse)}
+.counter-val.blue{color:var(--signal)}
+.counter-lbl{font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.15em}
+.counter-trend{font-size:10px;color:var(--fog);margin-top:4px}
+
+/* ── Map ── */
+.map-section{margin-bottom:60px}
+.section-header{display:flex;align-items:baseline;gap:12px;margin-bottom:20px}
+.section-title{font-family:var(--display);font-size:13px;font-weight:700;color:var(--bright);text-transform:uppercase;letter-spacing:.15em}
+.section-line{flex:1;height:1px;background:var(--wire)}
+.section-meta{font-size:10px;color:var(--fog)}
+
+.map-wrap{background:var(--ink1);border:1px solid var(--wire);border-radius:12px;padding:20px;position:relative;overflow:hidden}
+.map-wrap::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(77,124,255,.03),transparent 70%);pointer-events:none}
+
+/* ── Node list ── */
+.node-grid{display:grid;gap:6px}
+.node-card{background:var(--ink1);border:1px solid var(--wire);border-radius:9px;padding:14px 18px;display:grid;grid-template-columns:8px 1fr repeat(3,80px) 60px;align-items:center;gap:12px;transition:.15s;text-decoration:none}
+.node-card:hover{border-color:var(--wire2);background:var(--ink2)}
+.node-dot{width:7px;height:7px;border-radius:50%}
+.node-dot.online{background:var(--pulse);box-shadow:0 0 6px var(--pulse)}
+.node-dot.self{background:var(--signal);box-shadow:0 0 6px var(--signal)}
+.node-info .id{font-size:11px;color:var(--signal);font-family:var(--mono)}
+.node-info .url{font-size:11px;color:var(--fog);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.node-info .badges{display:flex;gap:4px;margin-top:3px}
+.badge{font-size:8px;padding:1px 5px;border-radius:3px;text-transform:uppercase;letter-spacing:.08em}
+.badge.bs{background:rgba(77,124,255,.15);color:var(--signal);border:1px solid rgba(77,124,255,.3)}
+.badge.self{background:rgba(0,255,163,.1);color:var(--pulse);border:1px solid rgba(0,255,163,.3)}
+.node-metric{text-align:center}
+.node-metric .val{font-size:12px;font-weight:700;color:var(--bright)}
+.node-metric .val.g{color:var(--pulse)}.node-metric .val.b{color:var(--signal)}.node-metric .val.d{color:var(--fog)}
+.node-metric .lbl{font-size:8px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;margin-top:2px}
+.node-time{font-size:10px;color:var(--fog);text-align:right}
+
+.node-card-header{display:grid;grid-template-columns:8px 1fr repeat(3,80px) 60px;gap:12px;padding:0 18px 8px;align-items:center}
+.node-card-header span{font-size:8px;color:var(--dim);text-transform:uppercase;letter-spacing:.1em;text-align:center}
+.node-card-header span:nth-child(2){text-align:left}
+.node-card-header span:last-child{text-align:right}
+
+/* ── Empty / loading ── */
+.loading-msg{text-align:center;padding:60px 20px;color:var(--fog);font-size:12px}
+.loading-msg .spin{display:inline-block;width:20px;height:20px;border:2px solid var(--wire);border-top-color:var(--pulse);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+footer{text-align:center;padding:40px 0 0;border-top:1px solid var(--wire);font-size:10px;color:var(--fog)}
+footer a{color:var(--fog);text-decoration:none;margin:0 8px}
+footer a:hover{color:var(--pulse)}
+.footer-update{margin-top:8px;font-size:9px;color:var(--dim)}
+
+@media(max-width:700px){
+  .counters{grid-template-columns:repeat(2,1fr)}
+  .continent-bars{grid-template-columns:repeat(3,1fr)}
+  .node-card{grid-template-columns:8px 1fr 60px 60px;gap:8px}
+  .node-card .node-metric:nth-child(5){display:none}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<nav>
+  <a class="nav-logo" href="/status">
+    <div class="logo-mark">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <circle cx="7" cy="6.5" r="3.5" stroke="white" stroke-width="1.2"/>
+        <path d="M4.5 6.5Q5.5 4 7 6.5Q8.5 9 9.5 6.5" stroke="rgba(255,255,255,.7)" stroke-width=".9" stroke-linecap="round" fill="none"/>
+        <circle cx="7" cy="6.5" r="1.1" fill="white"/>
+      </svg>
+    </div>
+    <div><div class="nav-title">StatusMon</div><span class="nav-sub">Red global</span></div>
+  </a>
+  <div class="nav-links">
+    <a class="nav-link" href="/status">Estado</a>
+    <a class="nav-link" href="/about">Instalar</a>
+    <a class="nav-link active" href="/network">Red</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="hero-label">Red colaborativa distribuida</div>
+  <h1>Monitorización<br><em>sin fronteras</em></h1>
+  <p class="hero-desc">Cada instalación de StatusMon forma parte de una red P2P de verificación cruzada. Los nodos se vigilan entre sí y alertan cuando uno cae.</p>
+  <div class="live-indicator"><div class="live-dot"></div><span id="last-update-text">Cargando…</span></div>
+</div>
+
+<!-- Counters -->
+<div class="counters">
+  <div class="counter">
+    <div class="counter-val green" id="c-nodes">–</div>
+    <div class="counter-lbl">Nodos activos</div>
+    <div class="counter-trend" id="c-nodes-sub">en la red</div>
+  </div>
+  <div class="counter">
+    <div class="counter-val" id="c-sites">–</div>
+    <div class="counter-lbl">Sitios monitorizados</div>
+    <div class="counter-trend">en total</div>
+  </div>
+  <div class="counter">
+    <div class="counter-val blue" id="c-uptime">–</div>
+    <div class="counter-lbl">Uptime medio</div>
+    <div class="counter-trend">de todos los sitios</div>
+  </div>
+  <div class="counter">
+    <div class="counter-val" id="c-continents">–</div>
+    <div class="counter-lbl">Continentes</div>
+    <div class="counter-trend" id="c-continents-sub">con nodos activos</div>
+  </div>
+</div>
+
+<!-- Bubble chart -->
+<div class="map-section">
+  <div class="section-header">
+    <div class="section-title">Distribución geográfica</div>
+    <div class="section-line"></div>
+    <div class="section-meta" id="map-meta">–</div>
+  </div>
+  <div class="map-wrap">
+    <svg id="bubble-chart" viewBox="0 0 900 320" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block">
+      <defs>
+        <filter id="glow">
+          <feGaussianBlur stdDeviation="4" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      <g id="bubbles"></g>
+    </svg>
+  </div>
+</div>
+
+<!-- Node list -->
+<div>
+  <div class="section-header">
+    <div class="section-title">Nodos públicos</div>
+    <div class="section-line"></div>
+    <div class="section-meta" id="nodes-meta">–</div>
+  </div>
+
+  <div class="node-card-header">
+    <span></span>
+    <span>Nodo</span>
+    <span>Sitios</span>
+    <span>Uptime</span>
+    <span>Versión</span>
+    <span>Visto</span>
+  </div>
+
+  <div class="node-grid" id="node-list">
+    <div class="loading-msg"><div class="spin"></div><br>Conectando con la red…</div>
+  </div>
+</div>
+
+<footer>
+  <div><a href="/status">Estado</a><a href="/about">Instalar</a><a href="/admin">Admin</a></div>
+  <div class="footer-update" id="footer-ts">–</div>
+</footer>
+
+</div>
+
+<script>
+const CONTINENT_NAMES = {
+  EU:'Europa', NA:'América N.', SA:'América S.',
+  AS:'Asia', AF:'África', OC:'Oceanía'
+};
+
+function timeAgo(ts){
+  const s=Math.round((Date.now()-ts)/1000);
+  if(s<60)return`hace ${s}s`;
+  if(s<3600)return`hace ${Math.round(s/60)}min`;
+  return`hace ${Math.round(s/3600)}h`;
+}
+
+function renderCounters(data){
+  document.getElementById('c-nodes').textContent = data.totalNodes || 0;
+  document.getElementById('c-nodes-sub').textContent = `${data.totalPeers||0} conocidos en total`;
+  document.getElementById('c-sites').textContent = data.totalSites || 0;
+  document.getElementById('c-uptime').textContent = data.avgUptime != null ? data.avgUptime+'%' : '–';
+  const continentCount = Object.keys(data.continents||{}).length;
+  document.getElementById('c-continents').textContent = continentCount;
+  document.getElementById('c-continents-sub').textContent =
+    Object.values(CONTINENT_NAMES).filter((_,i)=>Object.keys(data.continents||{})[i]).slice(0,2).join(', ') || 'en todo el mundo';
+  document.getElementById('last-update-text').textContent =
+    'Actualizado ' + timeAgo(data.lastUpdate || Date.now());
+  document.getElementById('footer-ts').textContent =
+    'Última actualización: ' + new Date(data.lastUpdate||Date.now()).toLocaleString('es');
+}
+
+function renderMap(data){
+  const continents = data.continents || {};
+  const entries = Object.entries(continents).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
+  if(!entries.length) return;
+
+  const NAMES = {EU:'Europa',AS:'Asia',NA:'América N.',SA:'América S.',AF:'África',OC:'Oceanía'};
+  const COLORS = {EU:'#4d7cff',AS:'#00ffa3',NA:'#ff6b35',SA:'#ffd700',AF:'#c084fc',OC:'#38bdf8'};
+
+  const maxVal = entries[0][1];
+  const totalNodes = entries.reduce((a,[,v])=>a+v,0);
+  const W = 900, H = 320;
+  const g = document.getElementById('bubbles');
+  g.innerHTML = '';
+
+  // Layout bubbles in a force-like grid — simple row packing
+  const MAX_R = 110, MIN_R = 28;
+  const bubbles = entries.map(([c, count]) => ({
+    c, count,
+    r: Math.max(MIN_R, Math.round(Math.sqrt(count/maxVal) * MAX_R)),
+    color: COLORS[c] || '#4d7cff',
+    name: NAMES[c] || c,
+    pct: Math.round(count/totalNodes*100),
+  }));
+
+  // Simple left-to-right placement with vertical centering
+  const padding = 20;
+  let x = padding;
+  bubbles.forEach((b, i) => {
+    // Two rows if many continents
+    const row = i < 3 ? 0 : 1;
+    const rowH = H / (bubbles.length > 3 ? 2 : 1);
+    const cy = rowH / 2 + row * rowH;
+    const cx = x + b.r;
+    b.cx = cx; b.cy = cy;
+    x = cx + b.r + padding;
+    if(i === 2 && bubbles.length > 3) x = padding;
+  });
+
+  // Center all bubbles horizontally
+  const maxX = Math.max(...bubbles.map(b => b.cx + b.r));
+  const offset = (W - maxX - padding) / 2;
+  bubbles.forEach(b => b.cx += offset);
+
+  const SVG = 'http://www.w3.org/2000/svg';
+  bubbles.forEach(b => {
+    const hex = b.color;
+    const rgba = hex + '18';
+
+    // Outer glow ring
+    const ring = document.createElementNS(SVG,'circle');
+    ring.setAttribute('cx', b.cx); ring.setAttribute('cy', b.cy);
+    ring.setAttribute('r', b.r + 8);
+    ring.setAttribute('fill', 'none');
+    ring.setAttribute('stroke', b.color);
+    ring.setAttribute('stroke-width', '1');
+    ring.setAttribute('opacity', '.2');
+    g.appendChild(ring);
+
+    // Fill circle
+    const circle = document.createElementNS(SVG,'circle');
+    circle.setAttribute('cx', b.cx); circle.setAttribute('cy', b.cy);
+    circle.setAttribute('r', b.r);
+    circle.setAttribute('fill', b.color);
+    circle.setAttribute('opacity', '.15');
+    circle.setAttribute('filter', 'url(#glow)');
+    g.appendChild(circle);
+
+    // Stroke circle
+    const stroke = document.createElementNS(SVG,'circle');
+    stroke.setAttribute('cx', b.cx); stroke.setAttribute('cy', b.cy);
+    stroke.setAttribute('r', b.r);
+    stroke.setAttribute('fill', 'none');
+    stroke.setAttribute('stroke', b.color);
+    stroke.setAttribute('stroke-width', '1.5');
+    stroke.setAttribute('opacity', '.6');
+    g.appendChild(stroke);
+
+    // Count (big)
+    const countText = document.createElementNS(SVG,'text');
+    countText.setAttribute('x', b.cx); countText.setAttribute('y', b.cy - 4);
+    countText.setAttribute('text-anchor', 'middle');
+    countText.setAttribute('font-family', "'Syne',sans-serif");
+    countText.setAttribute('font-size', Math.max(14, Math.min(32, b.r * 0.55)));
+    countText.setAttribute('font-weight', '800');
+    countText.setAttribute('fill', b.color);
+    countText.textContent = b.count;
+    g.appendChild(countText);
+
+    // Continent name
+    const nameText = document.createElementNS(SVG,'text');
+    nameText.setAttribute('x', b.cx); nameText.setAttribute('y', b.cy + Math.max(12, b.r * 0.3));
+    nameText.setAttribute('text-anchor', 'middle');
+    nameText.setAttribute('font-family', "'Space Mono',monospace");
+    nameText.setAttribute('font-size', Math.max(8, Math.min(11, b.r * 0.2)));
+    nameText.setAttribute('fill', '#6b7a99');
+    nameText.textContent = b.name;
+    g.appendChild(nameText);
+
+    // Percentage
+    const pctText = document.createElementNS(SVG,'text');
+    pctText.setAttribute('x', b.cx); pctText.setAttribute('y', b.cy + Math.max(24, b.r * 0.5));
+    pctText.setAttribute('text-anchor', 'middle');
+    pctText.setAttribute('font-family', "'Space Mono',monospace");
+    pctText.setAttribute('font-size', Math.max(7, Math.min(10, b.r * 0.17)));
+    pctText.setAttribute('fill', '#3a4a6b');
+    pctText.textContent = b.pct + '%';
+    g.appendChild(pctText);
+  });
+
+  document.getElementById('map-meta').textContent =
+    entries.length + ' continentes · ' + totalNodes + ' nodos';
+}
+
+function renderNodes(data){
+  const nodes = (data.nodes || []).filter(n => n.url);
+  document.getElementById('nodes-meta').textContent = nodes.length + ' nodos con URL pública';
+
+  if(!nodes.length){
+    document.getElementById('node-list').innerHTML =
+      '<div class="loading-msg">Sin nodos públicos detectados aún. Activa la red y configura una URL pública en ajustes.</div>';
+    return;
+  }
+
+  document.getElementById('node-list').innerHTML = nodes.map(n => {
+    const upCls = n.uptimePct==null?'d':n.uptimePct>=99?'g':n.uptimePct>=95?'':'';
+    const dotCls = n.isSelf ? 'self' : 'online';
+    return `<a class="node-card" href="${n.url}" target="_blank" rel="noopener">
+      <div class="node-dot ${dotCls}"></div>
+      <div class="node-info">
+        <div class="id">${n.nodeId}…</div>
+        <div class="url">${n.url}</div>
+        <div class="badges">
+          ${n.isSelf?'<span class="badge self">este nodo</span>':''}
+          ${n.isBootstrap?'<span class="badge bs">bootstrap</span>':''}
+        </div>
+      </div>
+      <div class="node-metric">
+        <div class="val b">${n.sitesMonitored||0}</div>
+        <div class="lbl">sitios</div>
+      </div>
+      <div class="node-metric">
+        <div class="val ${upCls}">${n.uptimePct!=null?n.uptimePct+'%':'–'}</div>
+        <div class="lbl">uptime</div>
+      </div>
+      <div class="node-metric">
+        <div class="val" style="font-size:10px">${n.version||'–'}</div>
+        <div class="lbl">versión</div>
+      </div>
+      <div class="node-time">${timeAgo(n.lastSeen)}</div>
+    </a>`;
+  }).join('');
+}
+
+// ─── Load data ────────────────────────────────────────────────────
+async function loadNetwork(){
+  try{
+    const res = await fetch('/api/network/map');
+    const data = await res.json();
+    renderCounters(data);
+    renderMap(data);
+    renderNodes(data);
+  }catch(e){
+    document.getElementById('node-list').innerHTML =
+      '<div class="loading-msg">Error al cargar datos de la red.</div>';
+    document.getElementById('last-update-text').textContent = 'Error de conexión';
+  }
+}
+
+loadNetwork();
+// Refresh every 5 minutes
+setInterval(loadNetwork, 5 * 60 * 1000);
+</script>
+</body>
+</html>

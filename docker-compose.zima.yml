@@ -1,0 +1,58 @@
+# StatusMon — docker-compose para ZimaOS / ZimaBlade / ZimaBoard
+# Versión 5.6.8 — imagen Docker Hub, sin necesidad de compilación local
+#
+# INSTALACIÓN VÍA APP STORE (más fácil):
+#   App Store → ⊞ Custom Install → pegar este YAML → Submit
+#   ZimaOS descarga la imagen automáticamente y asigna el puerto.
+#
+# INSTALACIÓN VÍA TERMINAL:
+#   docker compose -f docker-compose.zima.yml up -d
+
+services:
+  statusmon:
+    image: espiralvex/statusmon:latest
+    container_name: statusmon
+    restart: unless-stopped
+    environment:
+      - PORT=3000
+      - DATA_DIR=/data
+    ports:
+      - target: 3000
+        published: "${WEBUI_PORT:-3000}"
+        protocol: tcp
+    volumes:
+      # ZimaOS 1.6.x: AppData vive bajo ~/AppData/ (/root/AppData/ en disco)
+      - $HOME/AppData/statusMon:/data
+      - /proc:/host/proc:ro
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+x-casaos:
+  architectures:
+    - amd64
+    - arm64
+    - arm
+  main: statusmon
+  author: espiralvex
+  category: Network
+  description:
+    en_us: |
+      Self-hosted uptime monitor. Tracks response time, TTFB, SSL expiry and
+      server stats without depending on any external service.
+      No database, no registration, no telemetry. Data stored in ~/AppData/statusMon.
+  developer: espiralvex
+  icon: https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/uptime-kuma.png
+  tagline:
+    en_us: Monitor your services without depending on anyone.
+  title:
+    en_us: StatusMon
+  tips:
+    before_install:
+      en_us: |
+        First launch: open /admin to set your admin password.
+        Data is stored in ~/AppData/statusMon on your ZimaOS.
+  index: /admin
+  port_map: "${WEBUI_PORT:-3000}"

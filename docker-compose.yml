@@ -1,0 +1,72 @@
+services:
+  statusmon:
+    # ── Imagen (Docker Hub) ─────────────────────────────────────────────
+    # Opción recomendada: imagen precompilada, sin necesidad de código fuente
+    image: espiralvex/statusmon:latest
+    #
+    # Para construir desde el código fuente (sin conexión a Docker Hub):
+    # Comenta la línea image: y descomenta build:
+    # build: .
+
+    container_name: statusmon
+    restart: unless-stopped
+    environment:
+      - PORT=3000
+      # DATA_DIR: directorio dentro del contenedor donde se guardan todos los datos.
+      # La ruta del host se controla en volumes: abajo.
+      - DATA_DIR=/data
+
+    volumes:
+      # ── Datos persistentes (elige UNA opción) ──────────────────────────
+      #
+      # Opción A — ruta explícita en el host (recomendado para NAS/VPS)
+      # Cambia /opt/statusmon/data por la ruta que prefieras en tu servidor.
+      # Crea la carpeta antes si no existe: mkdir -p /opt/statusmon/data
+      - /opt/statusmon/data:/data
+      #
+      # Opción B — volumen Docker gestionado (más simple, sin ruta visible)
+      # Comenta la línea de arriba y descomenta esta:
+      # - statusmon_data:/data
+      #
+      # ── Stats del servidor (/proc del host, solo lectura) ─────────────
+      - /proc:/host/proc:ro
+      # Para exponer temperatura al contenedor, añade también:
+      # - /sys/class/thermal:/sys/class/thermal:ro
+      # - /sys/class/hwmon:/sys/class/hwmon:ro
+
+    # ── Acceso ────────────────────────────────────────────────────────────
+    #
+    # Sin proxy inverso: descomenta ports para acceso directo por IP
+    # ports:
+    #   - "3000:3000"
+    #
+    # Con proxy inverso (NPM, Traefik, Caddy, Cosmos):
+    # Deja ports comentado. El proxy debe estar en la misma red Docker.
+    # Ejemplo de red compartida con NPM:
+    # networks:
+    #   - npm_default      # ajusta al nombre de la red de tu proxy
+
+    # ── Cosmos Cloud ──────────────────────────────────────────────────────
+    # labels:
+    #   cosmos-name: statusmon
+    #   cosmos-port: "3000"
+    #   cosmos-host: status.tudominio.com
+    #   cosmos-ssl: "true"
+
+    # ── Traefik ───────────────────────────────────────────────────────────
+    # labels:
+    #   traefik.enable: "true"
+    #   traefik.http.routers.statusmon.rule: "Host(`status.tudominio.com`)"
+    #   traefik.http.routers.statusmon.entrypoints: "websecure"
+    #   traefik.http.routers.statusmon.tls.certresolver: "letsencrypt"
+    #   traefik.http.services.statusmon.loadbalancer.server.port: "3000"
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# Solo necesario si usas la Opción B (volumen gestionado)
+# volumes:
+#   statusmon_data:

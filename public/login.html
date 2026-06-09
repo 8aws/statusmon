@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#07080d">
+<title>StatusMon — Acceso</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#07080d;--s1:#0d0e18;--border:#1a1c2e;--border2:#252840;--text:#dde0f5;--muted:#4a4d6e;--faint:#1a1c2a;--up:#2affa0;--down:#ff3d6b;--accent:#6c63ff;--accent2:rgba(108,99,255,.12);--mono:'IBM Plex Mono',monospace;--sans:'Bricolage Grotesque',sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:100vh;min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:20px}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 30% 30%,rgba(108,99,255,.06) 0%,transparent 60%),radial-gradient(ellipse at 70% 70%,rgba(42,255,160,.04) 0%,transparent 60%);pointer-events:none}
+.card{position:relative;z-index:1;background:var(--s1);border:1px solid var(--border2);border-radius:16px;padding:36px 32px;width:100%;max-width:360px}
+.logo{display:flex;align-items:center;gap:12px;margin-bottom:28px;justify-content:center}
+.logo-mark{width:36px;height:36px;background:linear-gradient(135deg,var(--accent),var(--up));border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.logo h1{font-family:var(--sans);font-size:20px;font-weight:800;color:#fff}
+.logo small{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;display:block}
+h2{font-family:var(--sans);font-size:17px;font-weight:700;color:#fff;margin-bottom:6px;text-align:center}
+.subtitle{font-size:11px;color:var(--muted);text-align:center;margin-bottom:24px}
+
+/* First time setup */
+#setupMode .setup-badge{display:inline-block;background:rgba(42,255,160,.1);border:1px solid rgba(42,255,160,.3);color:var(--up);font-size:10px;padding:3px 10px;border-radius:10px;margin-bottom:16px;text-align:center;width:100%}
+
+.field{margin-bottom:14px}
+.field label{display:block;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;margin-bottom:6px}
+.field input{width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;color:var(--text);font-family:var(--mono);font-size:13px;outline:none;transition:border-color .15s}
+.field input:focus{border-color:var(--accent)}
+
+.btn-login{width:100%;padding:11px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-family:var(--mono);font-size:13px;font-weight:600;cursor:pointer;transition:opacity .15s;margin-top:4px}
+.btn-login:hover{opacity:.85}
+.btn-login:disabled{opacity:.5;cursor:not-allowed}
+
+.error{background:rgba(255,61,107,.1);border:1px solid rgba(255,61,107,.3);color:var(--down);padding:9px 12px;border-radius:7px;font-size:11px;margin-top:12px;display:none;text-align:center}
+.error.show{display:block}
+
+.attempts{font-size:10px;color:var(--muted);text-align:center;margin-top:8px;display:none}
+.attempts.show{display:block}
+
+.locked-timer{font-family:var(--sans);font-size:22px;font-weight:800;color:var(--down);text-align:center;margin:16px 0}
+</style>
+<link rel="apple-touch-icon" href="/icon-180.png">
+</head>
+<body>
+<div class="card">
+  <div class="logo">
+    <div class="logo-mark">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+        <circle cx="10" cy="9" r="5" stroke="white" stroke-width="1.5"/>
+        <path d="M6.5 9 Q8.5 5.5 10 9 Q11.5 12.5 13.5 9" stroke="rgba(255,255,255,.7)" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+        <circle cx="10" cy="9" r="1.5" fill="white"/>
+      </svg>
+    </div>
+    <div><h1>StatusMon</h1><small>uptime · perf · analytics</small></div>
+  </div>
+
+  <!-- Login mode -->
+  <div id="loginMode">
+    <h2>Acceso</h2>
+    <p class="subtitle">Introduce tu contraseña para continuar</p>
+    <div class="field">
+      <label for="password">Contraseña</label>
+      <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="btn-login" id="loginBtn" onclick="doLogin()">Entrar</button>
+    <div class="error" id="loginError"></div>
+    <div class="attempts" id="attemptsInfo"></div>
+    <div class="locked-timer" id="lockedTimer" style="display:none"></div>
+  </div>
+
+  <!-- First time setup -->
+  <div id="setupMode" style="display:none">
+    <div class="setup-badge">⚙ Primera configuración</div>
+    <h2>Crear contraseña</h2>
+    <p class="subtitle">Protege tu panel con una contraseña</p>
+    <div class="field">
+      <label for="newPass">Nueva contraseña</label>
+      <input type="password" id="newPass" placeholder="Mínimo 6 caracteres">
+    </div>
+    <div class="field">
+      <label for="confirmPass">Confirmar contraseña</label>
+      <input type="password" id="confirmPass" placeholder="Repite la contraseña">
+    </div>
+    <button class="btn-login" onclick="doSetup()">Configurar y entrar</button>
+    <div class="error" id="setupError"></div>
+    <div style="margin-top:14px;text-align:center">
+      <button onclick="skipSetup()" style="background:none;border:none;color:var(--muted);font-family:var(--mono);font-size:11px;cursor:pointer;text-decoration:underline">Continuar sin contraseña</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const redirect = new URLSearchParams(location.search).get('redirect') || '/';
+
+async function init() {
+  const res = await fetch('/api/auth/status');
+  const data = await res.json();
+  if (data.authenticated) { location.href = redirect; return; }
+  if (!data.authEnabled) {
+    document.getElementById('loginMode').style.display = 'none';
+    document.getElementById('setupMode').style.display = 'block';
+  }
+}
+
+async function doLogin() {
+  const pass = document.getElementById('password').value;
+  if (!pass) return;
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true; btn.textContent = 'Verificando…';
+  const res = await fetch('/api/auth/login', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password: pass })
+  });
+  const data = await res.json();
+  btn.disabled = false; btn.textContent = 'Entrar';
+
+  if (data.ok) {
+    localStorage.setItem('sm_token', data.token);
+    location.href = redirect;
+  } else if (res.status === 429) {
+    // Locked
+    document.getElementById('loginError').textContent = data.error;
+    document.getElementById('loginError').classList.add('show');
+    startLockTimer(data.remaining);
+  } else {
+    document.getElementById('loginError').textContent = data.error || 'Error desconocido';
+    document.getElementById('loginError').classList.add('show');
+    if (data.attemptsLeft !== undefined) {
+      const ai = document.getElementById('attemptsInfo');
+      ai.textContent = `Intentos restantes: ${data.attemptsLeft}`;
+      ai.classList.add('show');
+    }
+  }
+}
+
+function startLockTimer(seconds) {
+  let remaining = seconds;
+  const el = document.getElementById('lockedTimer');
+  const btn = document.getElementById('loginBtn');
+  el.style.display = 'block'; btn.disabled = true;
+  const tick = () => {
+    el.textContent = `${Math.floor(remaining/60)}:${String(remaining%60).padStart(2,'0')}`;
+    if (remaining <= 0) { el.style.display = 'none'; btn.disabled = false; document.getElementById('loginError').classList.remove('show'); return; }
+    remaining--; setTimeout(tick, 1000);
+  };
+  tick();
+}
+
+async function doSetup() {
+  const p = document.getElementById('newPass').value;
+  const c = document.getElementById('confirmPass').value;
+  const err = document.getElementById('setupError');
+  if (p.length < 6) { err.textContent = 'Mínimo 6 caracteres'; err.classList.add('show'); return; }
+  if (p !== c) { err.textContent = 'Las contraseñas no coinciden'; err.classList.add('show'); return; }
+  const res = await fetch('/api/auth/password', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password: p })
+  });
+  if (res.ok) {
+    // Login automatically
+    const lr = await fetch('/api/auth/login', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: p })
+    });
+    const ld = await lr.json();
+    if (ld.token) localStorage.setItem('sm_token', ld.token);
+    location.href = redirect;
+  } else {
+    err.textContent = 'Error al guardar la contraseña';
+    err.classList.add('show');
+  }
+}
+
+function skipSetup() { location.href = redirect; }
+
+document.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+init();
+</script>
+</body>
+</html>

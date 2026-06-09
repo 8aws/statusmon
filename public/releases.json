@@ -1,0 +1,128 @@
+{
+  "source": "local",
+  "remoteUrl": "https://raw.githubusercontent.com/8aws/statusmon/main/public/releases.json",
+  "releases": [
+    {
+      "version": "5.6.8",
+      "date": "2026-06-09",
+      "title": "Docker Hub — imagen precompilada",
+      "description": "Imagen oficial en Docker Hub (espiralvex/statusmon). Instalación sin compilación local. ZimaOS Custom Install funciona pegando el YAML. URLs de releases migradas a GitHub.",
+      "highlights": [
+        "Imagen Docker Hub: espiralvex/statusmon:latest",
+        "docker-compose.yml usa image: en lugar de build:",
+        "ZimaOS App Store → Custom Install funciona sin archivos fuente",
+        "install.sh e install-zima.sh ya no requieren --build",
+        "releases.json y changelog apuntan a GitHub Releases",
+        "GitHub Actions: build multi-arch automático en cada tag"
+      ],
+      "downloadUrl": "https://github.com/8aws/statusmon/releases/download/v5.6.8/statusmon-v5.6.8.zip",
+      "available": true,
+      "size": 1237111,
+      "changelog": "https://github.com/8aws/statusmon/releases/tag/v5.6.8"
+    },
+    {
+      "version": "5.6.7",
+      "date": "2026-06-09",
+      "title": "Fix rutas ZimaOS 1.6.x",
+      "description": "Rutas corregidas para ZimaOS 1.6.x: ~/AppData/statusMon en lugar de /DATA/AppData/statusmon.",
+      "highlights": [
+        "docker-compose.zima.yml usa ~/AppData/statusMon (ZimaOS 1.6.x)",
+        "install-zima.sh apunta a $HOME/AppData/statusMon",
+        "about.html actualizado con rutas y pasos correctos"
+      ],
+      "downloadUrl": "https://github.com/8aws/statusmon/releases/download/v5.6.7/statusmon-v5.6.7.zip",
+      "available": true,
+      "size": 1237111,
+      "changelog": "https://github.com/8aws/statusmon/releases/tag/v5.6.7"
+    },
+    {
+      "version": "5.6.6",
+      "date": "2026-05-30",
+      "title": "Selector de rango histórico — 7 días de historial",
+      "description": "maxHistory 500→10080 (7 días). Botones de rango temporal 1h/6h/24h/7d/personalizado. Resumen y tabla filtrados por rango.",
+      "highlights": [
+        "Historial de 7 días (10080 entradas a 1 check/min)",
+        "Selector de rango: 1h / 6h / 24h / 7d / Todo / Personalizado",
+        "Rango personalizado con selector fecha/hora desde-hasta",
+        "Resumen del rango: N checks · % uptime · media · P95",
+        "CSV exporta exactamente el tramo seleccionado",
+        "ZimaOS: docker-compose.zima.yml e install-zima.sh incluidos"
+      ],
+      "downloadUrl": "https://github.com/8aws/statusmon/releases/download/v5.6.6/statusmon-v5.6.6.zip",
+      "available": true,
+      "size": 1236724,
+      "changelog": "https://github.com/8aws/statusmon/releases/tag/v5.6.6"
+    },
+    {
+      "version": "5.6.5",
+      "date": "2026-05-26",
+      "title": "Fix bootstrap gap en releases",
+      "description": "La versión en ejecución siempre aparece como disponible. Migración automática de ZIPs desde public/releases/ a DATA_DIR/releases/.",
+      "highlights": [
+        "Versión activa siempre marcada como available:true en /api/releases",
+        "Migración automática de ZIPs desde la ubicación anterior"
+      ],
+      "downloadUrl": "https://github.com/8aws/statusmon/releases/download/v5.6.5/statusmon-v5.6.5.zip",
+      "available": true,
+      "size": 1229000,
+      "changelog": "https://github.com/8aws/statusmon/releases/tag/v5.6.5"
+    },
+    {
+      "version": "5.6.3",
+      "date": "2026-05-26",
+      "title": "Seguridad, UX y push fixes",
+      "description": "Salt aleatoria en cifrado, reintento ante fallos, /api/health, toast y countdown al reiniciar, fix loop push, botones copiar y limpiar.",
+      "highlights": [
+        "Salt aleatoria en scrypt — cifrado SMTP más seguro",
+        "Reintento inmediato ante check fallido (anti microcortes)",
+        "/api/health público para balanceadores",
+        "Toast de confirmación al guardar ajustes",
+        "Contador visual de 12s al aplicar actualización",
+        "Fix loop 'Push: 0/1 delivered' — suscripciones expiradas se eliminan",
+        "Botón limpiar suscripciones push + copiar URL heartbeat"
+      ],
+      "downloadUrl": "https://github.com/8aws/statusmon/releases/download/v5.6.3/statusmon-v5.6.3.zip",
+      "available": true,
+      "size": 1228913,
+      "changelog": "https://github.com/8aws/statusmon/releases/tag/v5.6.3"
+    },
+    {
+      "version": "5.6.0",
+      "date": "2026-05-25",
+      "title": "Push, heartbeat, DNS, SLA y atajos",
+      "description": "Web Push VAPID nativo, monitor heartbeat/cron, DNS check, informe SLA, backup automático, timeline de incidencias, acciones en lote, atajos de teclado y banner de mantenimiento.",
+      "highlights": [
+        "Push notifications nativas sin npm (VAPID + RFC 8291)",
+        "Tipos de monitor: heartbeat/cron y DNS check",
+        "Timeline de incidencias en vista detalle",
+        "Acciones en lote con checkboxes y barra flotante",
+        "Atajos de teclado globales (R, N, /, S, Esc, flechas)",
+        "Informe SLA CSV por sitio y mes",
+        "Backup automático configurable"
+      ],
+      "downloadUrl": "https://github.com/8aws/statusmon/releases/download/v5.6.0/statusmon-v5.6.0.zip",
+      "available": true,
+      "size": 1222761,
+      "changelog": "https://github.com/8aws/statusmon/releases/tag/v5.6.0"
+    },
+    {
+      "version": "5.5.0",
+      "date": "2026-05-24",
+      "title": "Personalización, edición de sitios y eficiencia",
+      "description": "Edición completa de sitios, panel de tema del estado público, health score, favicons, barra de filtro, drag & drop, webhook/intervalo/mantenimiento por sitio, export/import y fuentes cacheadas offline.",
+      "highlights": [
+        "Modal de edición de sitio (General, Avanzado, Mantenimiento)",
+        "Tab 'Estado público' con presets de color y fuente",
+        "Health score y trend en cada fila del dashboard",
+        "Drag & drop para reordenar sitios",
+        "Webhook, intervalo y ventanas de mantenimiento por sitio",
+        "Export/Import de configuración en JSON",
+        "Fuentes Google cacheadas offline en service worker"
+      ],
+      "downloadUrl": "https://github.com/8aws/statusmon/releases/download/v5.5.0/statusmon-v5.5.0.zip",
+      "available": true,
+      "size": 186368,
+      "changelog": "https://github.com/8aws/statusmon/releases/tag/v5.5.0"
+    }
+  ]
+}

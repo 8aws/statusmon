@@ -1,0 +1,118 @@
+# StatusMon — GitHub Actions: Build y publicación en Docker Hub
+#
+# Se activa cuando se sube un tag con formato v* (ej: v5.6.8)
+#
+# Requiere estos secrets en Settings → Secrets → Actions:
+#   DOCKERHUB_USERNAME  → tu usuario de Docker Hub (espiralvex)
+#   DOCKERHUB_TOKEN     → Access Token de Docker Hub (no la contraseña)
+#                         Crear en hub.docker.com → Account Settings → Security → New Access Token
+#
+# Lo que hace:
+#   1. Build multi-arch: linux/amd64, linux/arm64, linux/arm/v7
+#   2. Push a Docker Hub como espiralvex/statusmon:5.6.8 y espiralvex/statusmon:latest
+#   3. Crea un ZIP del código fuente y lo adjunta como Release asset en GitHub
+
+name: Docker Build & Publish
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  DOCKERHUB_REPO: espiralvex/statusmon
+
+jobs:
+  build-and-push:
+    name: Build multi-arch + Push Docker Hub
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Extraer versión del tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=v$VERSION" >> $GITHUB_OUTPUT
+          echo "Versión: $VERSION"
+
+      - name: Configurar QEMU (emulación arm)
+        uses: docker/setup-qemu-action@v3
+
+      - name: Configurar Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login en Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build y push imagen multi-arch
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          push: true
+          tags: |
+            ${{ env.DOCKERHUB_REPO }}:${{ steps.version.outputs.version }}
+            ${{ env.DOCKERHUB_REPO }}:latest
+          labels: |
+            org.opencontainers.image.title=StatusMon
+            org.opencontainers.image.description=Self-hosted uptime monitor
+            org.opencontainers.image.version=${{ steps.version.outputs.version }}
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+
+      - name: Crear ZIP de release
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          DIRNAME="statusmon-v${VERSION}"
+          # Copiar el repo al directorio con nombre versionado
+          mkdir -p /tmp/release/${DIRNAME}
+          rsync -a --exclude='.git' --exclude='node_modules' --exclude='.github' \
+            ./ /tmp/release/${DIRNAME}/
+          # Crear ZIP
+          cd /tmp/release
+          zip -r statusmon-v${VERSION}.zip ${DIRNAME}/
+          echo "ZIP creado: $(du -sh statusmon-v${VERSION}.zip | cut -f1)"
+          mv statusmon-v${VERSION}.zip $GITHUB_WORKSPACE/
+
+      - name: Crear GitHub Release y adjuntar ZIP
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: StatusMon ${{ steps.version.outputs.tag }}
+          body: |
+            ## StatusMon v${{ steps.version.outputs.version }}
+
+            ### Instalación rápida
+
+            **Docker (cualquier servidor):**
+            ```bash
+            docker run -d --name statusmon \
+              -p 3000:3000 \
+              -v /opt/statusmon/data:/data \
+              -v /proc:/host/proc:ro \
+              --restart unless-stopped \
+              espiralvex/statusmon:${{ steps.version.outputs.version }}
+            ```
+
+            **Docker Compose:**
+            ```bash
+            # Descarga el ZIP, edita docker-compose.yml y arranca
+            docker compose up -d
+            ```
+
+            **ZimaOS** — App Store → ⊞ Custom Install → pegar `docker-compose.zima.yml`
+
+            ---
+            Ver [CHANGELOG](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) para el detalle de cambios.
+          files: statusmon-v${{ steps.version.outputs.version }}.zip
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

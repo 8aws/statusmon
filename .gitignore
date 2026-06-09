@@ -1,0 +1,30 @@
+# Dependencias
+node_modules/
+
+# Datos de la app (nunca subir al repo)
+data/
+.env
+*.secret
+*.jwtsecret
+
+# Artefactos de build y releases
+*.zip
+*.tar.gz
+*.bak
+docker-compose.zima.local.yml
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+.DS_Store?
+._*
+
+# Logs
+*.log
+npm-debug.log*
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo

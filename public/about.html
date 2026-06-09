@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#07080d">
+<meta name="description" content="StatusMon — Monitor de uptime self-hosted, descentralizado y de código abierto">
+<title>StatusMon — Monitor de uptime self-hosted</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;600&family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#07080d;--s1:#0d0e18;--s2:#12141f;--border:#1a1c2e;--border2:#252840;
+  --text:#eef0fa;--muted:#8b8fb8;--faint:#1a1c2a;
+  --up:#2affa0;--up2:rgba(42,255,160,.1);
+  --down:#ff3d6b;--accent:#6c63ff;--accent2:rgba(108,99,255,.12);
+  --mono:'IBM Plex Mono',monospace;--sans:'Bricolage Grotesque',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 20% 10%,rgba(108,99,255,.07) 0%,transparent 60%),radial-gradient(ellipse at 80% 80%,rgba(42,255,160,.05) 0%,transparent 60%);pointer-events:none;z-index:0}
+
+.wrap{position:relative;z-index:1;max-width:900px;margin:0 auto;padding:0 24px 80px}
+
+/* ── Nav ── */
+nav{display:flex;align-items:center;justify-content:space-between;padding:20px 0;margin-bottom:40px;border-bottom:1px solid var(--border)}
+.nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.nav-logo-mark{width:28px;height:28px;background:linear-gradient(135deg,var(--accent),var(--up));border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.nav-logo h1{font-size:17px;font-weight:800;color:var(--text)}
+.nav-links{display:flex;gap:16px;align-items:center}
+.nav-link{font-family:var(--mono);font-size:11px;color:var(--muted);text-decoration:none;transition:.15s}
+.nav-link:hover{color:var(--text)}
+.nav-link.btn{background:var(--accent2);border:1px solid var(--accent);color:var(--accent);padding:6px 14px;border-radius:7px}
+.nav-link.btn:hover{background:var(--accent);color:#fff}
+
+/* ── Hero ── */
+.hero{text-align:center;padding:60px 20px 50px}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;background:var(--up2);border:1px solid rgba(42,255,160,.3);color:var(--up);padding:4px 14px;border-radius:20px;font-family:var(--mono);font-size:11px;margin-bottom:24px}
+.hero-badge-dot{width:6px;height:6px;border-radius:50%;background:var(--up);animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.hero h2{font-size:clamp(32px,6vw,52px);font-weight:800;color:#fff;line-height:1.1;margin-bottom:16px;letter-spacing:-.5px}
+.hero h2 span{background:linear-gradient(135deg,var(--accent),var(--up));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero p{font-size:16px;color:var(--muted);max-width:560px;margin:0 auto 32px;line-height:1.6;font-family:var(--mono)}
+.hero-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.btn-primary{background:var(--accent);border:none;color:#fff;padding:12px 28px;border-radius:9px;font-family:var(--mono);font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block;transition:.15s}
+.btn-primary:hover{opacity:.85}
+.btn-secondary{background:var(--s1);border:1px solid var(--border2);color:var(--text);padding:12px 28px;border-radius:9px;font-family:var(--mono);font-size:13px;cursor:pointer;text-decoration:none;display:inline-block;transition:.15s}
+.btn-secondary:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ── Stats bar ── */
+.stats-bar{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:60px}
+.stat-item{background:var(--s1);padding:20px;text-align:center}
+.stat-item .val{font-size:28px;font-weight:800;color:#fff;font-family:var(--sans)}
+.stat-item .val.green{color:var(--up)}
+.stat-item .lbl{font-size:11px;color:var(--muted);margin-top:4px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.1em}
+
+/* ── Features ── */
+.section-title{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.14em;margin-bottom:24px;text-align:center}
+.features{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:60px}
+.feature{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:20px}
+.feature-icon{font-size:24px;margin-bottom:12px}
+.feature h3{font-size:15px;font-weight:700;color:#fff;margin-bottom:6px}
+.feature p{font-size:12px;color:var(--muted);line-height:1.5;font-family:var(--mono)}
+
+/* ── Install wizard ── */
+.install-section{margin-bottom:60px}
+.install-tabs{display:flex;gap:4px;background:var(--faint);padding:3px;border-radius:10px;margin-bottom:20px;flex-wrap:wrap}
+.install-tab{flex:1;padding:8px 12px;border-radius:7px;border:none;background:none;font-family:var(--mono);font-size:11px;color:var(--muted);cursor:pointer;transition:.15s;text-align:center;min-width:80px}
+.install-tab.active{background:var(--s1);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.install-panel{display:none;background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:24px}
+.install-panel.active{display:block}
+.install-panel h3{font-size:15px;font-weight:700;color:#fff;margin-bottom:16px}
+.code-block{background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:16px;font-family:var(--mono);font-size:12px;color:var(--up);overflow-x:auto;position:relative;margin-bottom:12px;white-space:pre}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--faint);border:1px solid var(--border2);color:var(--muted);padding:3px 9px;border-radius:5px;font-family:var(--mono);font-size:10px;cursor:pointer;transition:.15s}
+.copy-btn:hover{border-color:var(--accent);color:var(--accent)}
+.install-note{font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:8px;line-height:1.5}
+.install-note a{color:var(--accent);text-decoration:none}
+
+/* ── Wizard generator ── */
+.wizard{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:60px}
+.wizard h3{font-size:17px;font-weight:700;color:#fff;margin-bottom:6px}
+.wizard p{font-size:12px;color:var(--muted);font-family:var(--mono);margin-bottom:20px}
+.wizard-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.wfield label{display:block;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;margin-bottom:6px;font-family:var(--mono)}
+.wfield input,.wfield select{width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:7px;padding:9px 12px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;transition:.15s}
+.wfield input:focus,.wfield select:focus{border-color:var(--accent)}
+.wizard-output{background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:16px;font-family:var(--mono);font-size:11px;color:var(--up);overflow-x:auto;white-space:pre;min-height:200px}
+
+/* ── Releases ── */
+.releases{margin-bottom:60px}
+.release-card{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:8px;display:flex;align-items:flex-start;gap:16px}
+.release-card.latest{border-color:rgba(42,255,160,.3);background:rgba(42,255,160,.03)}
+.release-version{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--accent);min-width:60px}
+.release-badge{display:inline-block;background:var(--up2);color:var(--up);font-size:9px;padding:2px 7px;border-radius:10px;font-family:var(--mono);margin-left:8px;vertical-align:middle}
+.release-info{flex:1}
+.release-title{font-size:14px;font-weight:700;color:#fff;margin-bottom:4px}
+.release-desc{font-size:11px;color:var(--muted);font-family:var(--mono);margin-bottom:8px;line-height:1.4}
+.release-highlights{display:flex;gap:6px;flex-wrap:wrap}
+.hl{font-size:10px;background:var(--faint);border:1px solid var(--border2);color:var(--muted);padding:2px 8px;border-radius:4px;font-family:var(--mono)}
+.release-date{font-size:10px;color:var(--muted);font-family:var(--mono);text-align:right;min-width:60px}
+.release-dl{display:inline-block;margin-top:8px;font-size:11px;color:var(--accent);text-decoration:none;font-family:var(--mono)}
+.release-dl:hover{text-decoration:underline}
+.releases-more{text-align:center;margin-top:12px;font-size:11px;color:var(--muted);font-family:var(--mono)}
+.releases-more a{color:var(--accent);text-decoration:none}
+
+/* ── Badge section ── */
+.badge-section{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:60px}
+.badge-section h3{font-size:17px;font-weight:700;color:#fff;margin-bottom:6px}
+.badge-section p{font-size:12px;color:var(--muted);font-family:var(--mono);margin-bottom:20px;line-height:1.5}
+.badge-preview{background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:16px;margin-bottom:12px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.badge-input-row{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin-bottom:12px}
+.badge-input-row input{background:var(--bg);border:1px solid var(--border2);border-radius:7px;padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;flex:1;min-width:150px}
+.badge-input-row input:focus{border-color:var(--accent)}
+
+/* ── Footer ── */
+footer{text-align:center;padding:40px 0 20px;border-top:1px solid var(--border);color:var(--muted);font-family:var(--mono);font-size:11px}
+footer a{color:var(--muted);text-decoration:none;margin:0 8px}
+footer a:hover{color:var(--text)}
+
+@media(max-width:700px){
+  .features{grid-template-columns:1fr}
+  .stats-bar{grid-template-columns:1fr}
+  .wizard-grid{grid-template-columns:1fr}
+  .install-tabs{flex-direction:column}
+  .install-tab{flex:none}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<nav>
+  <a class="nav-logo" href="/status">
+    <div class="nav-logo-mark">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <circle cx="8" cy="7" r="4" stroke="white" stroke-width="1.3"/>
+        <path d="M5 7Q6.5 4.5 8 7Q9.5 9.5 11 7" stroke="rgba(255,255,255,.7)" stroke-width="1" stroke-linecap="round" fill="none"/>
+        <circle cx="8" cy="7" r="1.2" fill="white"/>
+      </svg>
+    </div>
+    <h1>StatusMon</h1>
+  </a>
+  <div class="nav-links">
+    <a class="nav-link" href="#install">Instalar</a>
+    <a class="nav-link" href="#releases">Releases</a>
+    <a class="nav-link" href="#badges">Badges</a>
+    <a class="nav-link" href="/network">Red</a>
+    <a class="nav-link" href="/status">Demo</a>
+    <a class="nav-link btn" href="#install" onclick="document.getElementById('install').scrollIntoView({behavior:'smooth'});return false;">Instalar gratis →</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="hero-badge"><div class="hero-badge-dot"></div><span id="hero-version">v5.2.0</span> · Open Source · Self-hosted</div>
+  <h2>Monitoriza tus servicios.<br><span>Sin depender de nadie.</span></h2>
+  <p>StatusMon es un monitor de uptime y rendimiento que corres en tu propio servidor. Sin suscripciones, sin límites, sin que tus datos salgan de casa.</p>
+  <div class="hero-actions">
+    <a class="btn-primary" href="#install" onclick="document.getElementById('install').scrollIntoView({behavior:'smooth'});return false;">Instalar ahora</a>
+    <a class="btn-secondary" href="/status">Ver en acción →</a>
+  </div>
+</div>
+
+<!-- Community stats -->
+<div class="stats-bar" id="stats-bar">
+  <div class="stat-item"><div class="val green" id="stat-nodes">–</div><div class="lbl">Nodos en la red</div></div>
+  <div class="stat-item"><div class="val" id="stat-version">–</div><div class="lbl">Versión actual</div></div>
+  <div class="stat-item"><div class="val" id="stat-peers">–</div><div class="lbl">Peers activos</div></div>
+</div>
+
+<!-- Features -->
+<div class="section-title">Por qué StatusMon</div>
+<div class="features">
+  <div class="feature">
+    <div class="feature-icon">🏠</div>
+    <h3>100% self-hosted</h3>
+    <p>Corre en tu NAS, VPS o Raspberry Pi. Tus datos no salen de tu servidor.</p>
+  </div>
+  <div class="feature">
+    <div class="feature-icon">⚡</div>
+    <h3>TTFB + Stack detection</h3>
+    <p>Mide tiempo real de respuesta, TTFB, detecta nginx/Apache/PHP/Node automáticamente.</p>
+  </div>
+  <div class="feature">
+    <div class="feature-icon">🔐</div>
+    <h3>SSL monitoring</h3>
+    <p>Vigila la expiración de tus certificados con alertas anticipadas configurables.</p>
+  </div>
+  <div class="feature">
+    <div class="feature-icon">🌐</div>
+    <h3>Red colaborativa</h3>
+    <p>Verificación cruzada entre nodos. Si tu red cae, otros nodos te avisan desde fuera.</p>
+  </div>
+  <div class="feature">
+    <div class="feature-icon">📊</div>
+    <h3>Estadísticas completas</h3>
+    <p>p50/p95/p99, uptime 24h/7d, MTBF, tendencias, distribución de códigos HTTP.</p>
+  </div>
+  <div class="feature">
+    <div class="feature-icon">🔔</div>
+    <h3>Alertas multi-canal</h3>
+    <p>Correo SMTP (Gmail, Outlook, iCloud, directo sin relay) y Web Push nativo. Umbral configurable para evitar falsos positivos.</p>
+  </div>
+  <div class="feature">
+    <div class="feature-icon">📱</div>
+    <h3>PWA instalable</h3>
+    <p>Instala como app en móvil y escritorio. Funciona offline con datos cacheados.</p>
+  </div>
+  <div class="feature">
+    <div class="feature-icon">🏷️</div>
+    <h3>Organización por tags</h3>
+    <p>Agrupa servicios por proyecto. URLs compartibles por cliente: /status/midnight</p>
+  </div>
+  <div class="feature">
+    <div class="feature-icon">🐳</div>
+    <h3>Docker en un comando</h3>
+    <p>Un contenedor, sin base de datos, datos en JSON. QNAP, Synology, ZimaOS, VPS, Cosmos, Traefik, NPM.</p>
+  </div>
+</div>
+
+<!-- Install wizard -->
+<div id="install" class="install-section">
+  <div class="section-title">Instalación</div>
+
+  <div class="install-tabs">
+    <button class="install-tab active" onclick="switchInstall('docker')">🐳 Docker</button>
+    <button class="install-tab" onclick="switchInstall('qnap')">📦 QNAP</button>
+    <button class="install-tab" onclick="switchInstall('synology')">💾 Synology</button>
+    <button class="install-tab" onclick="switchInstall('zima')">❄️ ZimaOS</button>
+    <button class="install-tab" onclick="switchInstall('vps')">☁️ VPS</button>
+    <button class="install-tab" onclick="switchInstall('cosmos')">🌐 Cosmos</button>
+  </div>
+
+  <div class="install-panel active" id="panel-docker">
+    <h3>Docker Compose</h3>
+    <div style="position:relative">
+      <div class="code-block" id="code-docker"># 1. Descomprime el ZIP descargado
+mkdir -p /opt/statusmon && cd /opt/statusmon
+unzip statusmon-v5.6.x.zip && cd statusmon-v5.6.*
+
+# 2. Crea el directorio de datos
+mkdir -p data
+
+# 3. Edita docker-compose.yml: cambia la ruta de datos si quieres
+#    Por defecto usa ./data:/data (relativa al directorio actual)
+
+# 4. Arranca
+docker compose up -d --build</div>
+      <button class="copy-btn" onclick="copyCode('code-docker')">Copiar</button>
+    </div>
+    <p class="install-note">Accede en <strong>http://localhost:3000/admin</strong> para la primera configuración. Los datos se guardan en <code>./data/</code> y sobreviven a las actualizaciones.</p>
+  </div>
+
+  <div class="install-panel" id="panel-qnap">
+    <h3>QNAP Container Station</h3>
+    <ol style="font-family:var(--mono);font-size:12px;color:var(--muted);line-height:2;padding-left:20px">
+      <li>Descarga el ZIP y descomprímelo en tu NAS via File Station (ej: <code>/share/External/statusmon</code>)</li>
+      <li>Crea una carpeta <code>data</code> dentro (ej: <code>/share/External/statusmon/data</code>)</li>
+      <li>Edita <code>docker-compose.yml</code>: en <code>volumes:</code> pon la ruta completa del NAS:<br>
+        <code style="color:var(--up)">/share/External/statusmon/data:/data</code></li>
+      <li>Abre Container Station → Aplicaciones → Crear → elige la carpeta con <code>docker-compose.yml</code></li>
+      <li>Pulsa Crear — Container Station construirá la imagen y arrancará</li>
+    </ol>
+    <p class="install-note" style="margin-top:12px">⚠ Usa siempre rutas absolutas en el NAS para el bind mount, no rutas relativas (<code>./data</code>). Para actualizar: sube el nuevo ZIP, aplica desde el panel Admin → Actualización.</p>
+  </div>
+
+  <div class="install-panel" id="panel-synology">
+    <h3>Synology NAS</h3>
+    <ol style="font-family:var(--mono);font-size:12px;color:var(--muted);line-height:2;padding-left:20px">
+      <li>Instala Container Manager desde Package Center</li>
+      <li>Descarga y descomprime el ZIP en una carpeta compartida</li>
+      <li>Container Manager → Proyecto → Crear desde docker-compose.yml</li>
+      <li>Configura el puerto o usa Reverse Proxy en Panel de Control</li>
+    </ol>
+  </div>
+
+  <div class="install-panel" id="panel-zima">
+    <h3>ZimaOS / ZimaBlade / ZimaBoard</h3>
+
+    <!-- Método 1: Recomendado -->
+    <div style="border:1px solid var(--border2);border-radius:10px;padding:16px;margin-bottom:16px">
+      <div style="font-family:var(--mono);font-size:10px;color:var(--up);text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px">⭐ Método 1 — Files + Terminal (recomendado)</div>
+      <ol style="font-family:var(--mono);font-size:12px;color:var(--muted);line-height:2.2;padding-left:20px">
+        <li>Descarga <strong>statusmon-v5.6.7.zip</strong> a tu ordenador</li>
+        <li>En ZimaOS abre <strong>Files</strong> → navega a <code>~</code> (home) → arrastra el ZIP para subirlo</li>
+        <li>Clic derecho sobre el ZIP → <strong>Extract Here</strong> → se crea la carpeta <code>statusmon-v5.6.7</code></li>
+        <li>En ZimaOS abre <strong>Terminal</strong> y ejecuta:
+          <div style="position:relative;margin:6px 0">
+            <div class="code-block" id="code-zima" style="margin:0">cd ~/statusmon-v5.6.7
+sh install-zima.sh</div>
+            <button class="copy-btn" onclick="copyCode('code-zima')">Copiar</button>
+          </div>
+        </li>
+        <li>Accede al panel en <strong>http://IP-ZIMA:3000/admin</strong></li>
+      </ol>
+      <p class="install-note">Los datos se guardan en <code>~/AppData/statusMon/</code> (convención ZimaOS 1.6.x) y el contenedor aparece en <strong>ZimaOS → Apps → My Apps</strong>.</p>
+    </div>
+
+    <!-- Método 2: App Store Custom Install -->
+    <div style="border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px">
+      <div style="font-family:var(--mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px">Método 2 — App Store → Custom Install</div>
+      <ol style="font-family:var(--mono);font-size:12px;color:var(--muted);line-height:2.2;padding-left:20px">
+        <li>Primero extrae el ZIP en <code>~/statusmon-v5.6.7/</code> (pasos 2-3 de arriba)</li>
+        <li>En ZimaOS abre <strong>App Store</strong> → botón <strong>⊞ Custom Install</strong> (esquina superior derecha)</li>
+        <li>Pega el contenido de <code>docker-compose.zima.yml</code> del ZIP:
+          <div style="position:relative;margin:6px 0">
+            <div class="code-block" id="code-zima2" style="margin:0">cat ~/statusmon-v5.6.7/docker-compose.zima.yml</div>
+            <button class="copy-btn" onclick="copyCode('code-zima2')">Copiar</button>
+          </div>
+        </li>
+        <li>ZimaOS asignará el puerto automáticamente y aparecerá como app nativa</li>
+      </ol>
+      <p class="install-note">⚠️ El Custom Install requiere que los archivos fuente estén extraídos en el servidor. El contexto de build (<code>build: .</code>) apunta a <code>~/statusmon-v5.6.7/</code>.</p>
+    </div>
+
+    <p class="install-note">
+      💾 Si quieres otro disco: pasa <code>--data /media/tu-disco/statusmon</code> a <code>install-zima.sh</code>.
+      La ruta por defecto <code>~/AppData/statusMon/</code> sigue la convención de ZimaOS 1.6.x.
+    </p>
+  </div>
+
+  <div class="install-panel" id="panel-vps">
+    <h3>VPS / Servidor Linux</h3>
+    <div style="position:relative">
+      <div class="code-block" id="code-vps"># 1. Instalar Docker si no lo tienes
+curl -fsSL https://get.docker.com | sh
+usermod -aG docker $USER && newgrp docker
+
+# 2. Copiar el ZIP al servidor y descomprimir
+mkdir -p /opt/statusmon && cd /opt/statusmon
+# scp statusmon-v5.6.x.zip usuario@servidor:/opt/statusmon/
+unzip statusmon-v5.6.x.zip && cd statusmon-v5.6.*
+mkdir -p data
+
+# 3. Editar docker-compose.yml: ajustar ruta de datos y
+#    descomentar ports o configurar Traefik/Caddy
+
+# 4. Arrancar
+docker compose up -d --build</div>
+      <button class="copy-btn" onclick="copyCode('code-vps')">Copiar</button>
+    </div>
+    <p class="install-note">Para HTTPS usa Caddy, Nginx Proxy Manager o Traefik. Descomenta la sección Traefik en <code>docker-compose.yml</code>. Accede en <strong>http://IP:3000/admin</strong> para la primera configuración.</p>
+  </div>
+
+  <div class="install-panel" id="panel-cosmos">
+    <h3>Cosmos Cloud</h3>
+    <div style="position:relative">
+      <div class="code-block" id="code-cosmos">mkdir statusmon && cd statusmon
+# Descarga el ZIP y descomprímelo
+# Edita docker-compose.yml y descomenta la sección Cosmos:
+
+labels:
+  cosmos-name: statusmon
+  cosmos-port: "3000"
+  cosmos-host: status.tudominio.com
+  cosmos-ssl: "true"
+  cosmos-auth: "true"
+
+docker compose up -d --build</div>
+      <button class="copy-btn" onclick="copyCode('code-cosmos')">Copiar</button>
+    </div>
+    <p class="install-note">Cosmos gestiona SSL y proxy automáticamente. Con <code>cosmos-auth: "true"</code> añade autenticación adicional de Cosmos.</p>
+  </div>
+</div>
+
+<!-- Custom docker-compose generator -->
+<div class="wizard">
+  <h3>Generador de configuración</h3>
+  <p>Personaliza tu docker-compose.yml y descárgalo listo para usar.</p>
+  <div class="wizard-grid">
+    <div class="wfield">
+      <label>Dominio público</label>
+      <input id="wz-domain" placeholder="status.tudominio.com" oninput="updateWizard()">
+    </div>
+    <div class="wfield">
+      <label>Proxy inverso</label>
+      <select id="wz-proxy" onchange="updateWizard()">
+        <option value="none">Sin proxy (acceso directo)</option>
+        <option value="npm">Nginx Proxy Manager</option>
+        <option value="traefik">Traefik</option>
+        <option value="cosmos">Cosmos Cloud</option>
+        <option value="zima">ZimaOS</option>
+      </select>
+    </div>
+    <div class="wfield">
+      <label>Ruta de datos en el host</label>
+      <input id="wz-datadir" placeholder="/opt/statusmon/data" value="/opt/statusmon/data" oninput="updateWizard()">
+    </div>
+    <div class="wfield">
+      <label>Puerto (si sin proxy)</label>
+      <input id="wz-port" type="number" value="3000" min="1024" max="65535" oninput="updateWizard()">
+    </div>
+  </div>
+  <div class="code-block wizard-output" id="wizard-output"></div>
+  <button class="btn-primary" onclick="downloadCompose()" style="margin-top:12px">⬇ Descargar docker-compose.yml</button>
+</div>
+
+<!-- Releases -->
+<div id="releases" class="releases">
+  <div class="section-title">Releases</div>
+  <div id="releases-list"><div style="text-align:center;padding:40px;color:var(--muted);font-family:var(--mono)">Cargando releases…</div></div>
+  <div class="releases-more" id="releases-more" style="display:none">
+    <a href="https://github.com/8aws/statusmon/releases" target="_blank">Ver todas las versiones →</a>
+  </div>
+</div>
+
+<!-- Badges -->
+<div id="badges" class="badge-section">
+  <h3>Badges para tu web o README</h3>
+  <p>Añade un badge dinámico con el estado de cualquier servicio monitorizado en esta instalación. Se actualiza en tiempo real.</p>
+  <div class="badge-input-row">
+    <input id="badge-name" placeholder="nombre-del-sitio" oninput="updateBadge()">
+    <button class="btn-secondary" onclick="updateBadge()">Generar</button>
+  </div>
+  <div class="badge-preview" id="badge-preview">
+    <span style="font-size:12px;color:var(--muted);font-family:var(--mono)">Introduce un nombre para generar el badge</span>
+  </div>
+  <div id="badge-code" style="display:none">
+    <div style="font-size:10px;color:var(--muted);font-family:var(--mono);margin-bottom:6px;text-transform:uppercase;letter-spacing:.1em">Markdown</div>
+    <div style="position:relative">
+      <div class="code-block" id="badge-md" style="color:var(--text)"></div>
+      <button class="copy-btn" onclick="copyCode('badge-md')">Copiar</button>
+    </div>
+    <div style="font-size:10px;color:var(--muted);font-family:var(--mono);margin:10px 0 6px;text-transform:uppercase;letter-spacing:.1em">HTML</div>
+    <div style="position:relative">
+      <div class="code-block" id="badge-html" style="color:var(--text)"></div>
+      <button class="copy-btn" onclick="copyCode('badge-html')">Copiar</button>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div style="margin-bottom:12px">
+    <a href="/status">Estado</a>
+    <a href="/admin">Admin</a>
+    <a href="/status">Estado de esta instalación</a>
+  </div>
+  StatusMon es software libre. Úsalo, modifícalo y distribúyelo.
+  <div style="margin-top:8px;font-size:10px" id="footer-node"></div>
+</footer>
+
+</div>
+
+<script>
+// ─── Install tabs ─────────────────────────────────────────────────
+function switchInstall(name) {
+  const tabs = ['docker','qnap','synology','zima','vps','cosmos'];
+  document.querySelectorAll('.install-tab').forEach((t,i) => {
+    t.classList.toggle('active', tabs[i] === name);
+  });
+  document.querySelectorAll('.install-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+}
+
+// ─── Copy code ────────────────────────────────────────────────────
+function copyCode(id) {
+  const el = document.getElementById(id);
+  navigator.clipboard.writeText(el.textContent).then(() => {
+    const btn = el.parentElement.querySelector('.copy-btn');
+    if (btn) { btn.textContent = '✓ Copiado'; setTimeout(() => btn.textContent = 'Copiar', 2000); }
+  });
+}
+
+// ─── Wizard ───────────────────────────────────────────────────────
+function updateWizard() {
+  const domain = document.getElementById('wz-domain').value.trim() || 'status.tudominio.com';
+  const proxy  = document.getElementById('wz-proxy').value;
+  const datadir = (document.getElementById('wz-datadir').value || '/opt/statusmon/data').trim();
+  const port   = document.getElementById('wz-port').value || '3000';
+
+  // Volumes: bind mount to host path + /proc for server stats
+  const volumes = `      - ${datadir}:/data\n      - /proc:/host/proc:ro`;
+
+  let portsBlock = '';
+  let labelsBlock = '';
+  let networkBlock = '';
+  let noteBlock = '';
+
+  if (proxy === 'none' || proxy === 'npm' || proxy === 'zima') {
+    portsBlock = `\n    ports:\n      - "${port}:3000"`;
+    if (proxy === 'npm') noteBlock = '\n    # Red compartida con Nginx Proxy Manager:\n    # networks:\n    #   - npm_network';
+    if (proxy === 'zima') noteBlock = '\n    # ZimaOS: acceso en http://IP-ZIMA:' + port + '/admin';
+  } else if (proxy === 'cosmos') {
+    labelsBlock = `\n    labels:\n      cosmos-name: statusmon\n      cosmos-port: "3000"\n      cosmos-host: ${domain}\n      cosmos-ssl: "true"\n      cosmos-auth: "true"`;
+  } else if (proxy === 'traefik') {
+    labelsBlock = `\n    labels:\n      traefik.enable: "true"\n      traefik.http.routers.statusmon.rule: "Host(\`${domain}\`)"\n      traefik.http.routers.statusmon.entrypoints: "websecure"\n      traefik.http.routers.statusmon.tls.certresolver: "letsencrypt"\n      traefik.http.services.statusmon.loadbalancer.server.port: "3000"`;
+  }
+
+  const yaml = `services:
+  statusmon:
+    build: .
+    container_name: statusmon
+    restart: unless-stopped
+    environment:
+      - PORT=3000
+      - DATA_DIR=/data${noteBlock}
+    volumes:
+${volumes}${portsBlock}${labelsBlock}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"`;
+
+  document.getElementById('wizard-output').textContent = yaml;
+}
+
+function downloadCompose() {
+  const content = document.getElementById('wizard-output').textContent;
+  if (!content.trim()) { alert('Configura primero las opciones'); return; }
+  const blob = new Blob([content], { type: 'text/yaml' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'docker-compose.yml';
+  a.click();
+}
+
+// ─── Badge generator ──────────────────────────────────────────────
+function updateBadge() {
+  const name = document.getElementById('badge-name').value.trim();
+  if (!name) return;
+  const baseUrl = location.origin;
+  const badgeUrl = `${baseUrl}/badge/${encodeURIComponent(name)}`;
+  const preview = document.getElementById('badge-preview');
+  preview.innerHTML = `<img src="${badgeUrl}" alt="StatusMon badge" style="height:20px"><span style="font-size:11px;color:var(--muted);font-family:var(--mono)">${badgeUrl}</span>`;
+  document.getElementById('badge-code').style.display = 'block';
+  document.getElementById('badge-md').textContent = `![Estado ${name}](${badgeUrl})`;
+  document.getElementById('badge-html').textContent = `<img src="${badgeUrl}" alt="Estado ${name}">`;
+}
+
+// ─── Load releases ────────────────────────────────────────────────
+async function loadReleases() {
+  let releases = [];
+  let fromRemote = false;
+
+  // Try local first
+  try {
+    const res = await fetch('/api/releases');
+    const data = await res.json();
+    releases = (data.releases || []).filter(r => r.available !== false);
+  } catch {}
+
+  // Always try remote to supplement with more versions and unavailable ones
+  try {
+    const res = await fetch('https://raw.githubusercontent.com/8aws/statusmon/main/public/releases.json', { signal: AbortSignal.timeout(4000) });
+    const data = await res.json();
+    if (data.releases?.length) {
+      // Merge: add remote versions not available locally
+      const localVersions = new Set(releases.map(r => r.version));
+      data.releases.forEach(r => {
+        if (!localVersions.has(r.version)) {
+          releases.push({ ...r, fromNetwork: true });
+        }
+      });
+      // If we had no local releases at all, use remote
+      if (!releases.length) releases = data.releases;
+      releases.sort((a,b) => b.version.localeCompare(a.version, undefined, {numeric:true}));
+      fromRemote = true;
+    }
+  } catch {
+    // Remote unavailable — show only local
+    if (!releases.length) {
+      document.getElementById('releases-list').innerHTML =
+        '<div style="text-align:center;padding:40px;color:var(--muted);font-family:var(--mono)">No hay releases disponibles localmente ni en la red.</div>';
+      return;
+    }
+  }
+
+  const el = document.getElementById('releases-list');
+  if (!releases.length) {
+    el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);font-family:var(--mono)">No hay releases disponibles</div>';
+    return;
+  }
+
+  el.innerHTML = releases.map((r, i) => `
+    <div class="release-card${i===0?' latest':''}">
+      <div>
+        <div class="release-version">${r.version}${i===0?'<span class="release-badge">latest</span>':''}</div>
+        <div class="release-date">${r.date}</div>
+      </div>
+      <div class="release-info">
+        <div class="release-title">${r.title}</div>
+        <div class="release-desc">${r.description}</div>
+        <div class="release-highlights">${(r.highlights||[]).map(h=>`<span class="hl">${h}</span>`).join('')}</div>
+        ${r.downloadUrl?`<a class="release-dl" href="${r.downloadUrl}">⬇ Descargar v${r.version}</a>`:''} ${r.fromNetwork?'<span style="font-size:9px;color:var(--muted);font-family:var(--mono)">· desde la red</span>':''}
+      </div>
+    </div>`).join('');
+
+  if (fromRemote && releases.length > 3) {
+    document.getElementById('releases-more').style.display = 'block';
+  }
+}
+
+// ─── Community stats ──────────────────────────────────────────────
+async function loadStats() {
+  try {
+    const res = await fetch('/api/about');
+    const d = await res.json();
+    document.getElementById('hero-version').textContent = 'v' + d.version;
+    document.getElementById('stat-version').textContent = 'v' + d.version;
+    document.getElementById('stat-nodes').textContent = d.networkStats?.totalPeers || '–';
+    document.getElementById('stat-peers').textContent = d.networkStats?.activePeers || '–';
+    if (d.version) document.getElementById('footer-node').textContent = 'Esta instalación corre v' + d.version;
+  } catch {}
+
+  // Try to get network totals from bootstrap
+  try {
+    const res = await fetch('/statusmon/peers/health');
+    const d = await res.json();
+    if (d.activePeers) document.getElementById('stat-nodes').textContent = d.activePeers;
+  } catch {}
+}
+
+// ─── Init ─────────────────────────────────────────────────────────
+updateWizard();
+loadReleases();
+loadStats();
+</script>
+</body>
+</html>

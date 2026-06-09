@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#07080d" id="themeColor">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title id="pageTitle">Estado de servicios</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#1c1f2e;--s1:#222533;--s2:#272a3a;--border:#2e3248;--border2:#252840;
+  --text:#eef0fa;--muted:#8b8fb8;--faint:#222538;
+  --up:#2affa0;--up2:rgba(42,255,160,.1);
+  --down:#ff3d6b;--down2:rgba(255,61,107,.1);
+  --warn:#ffb830;--warn2:rgba(255,184,48,.1);
+  --accent:#6c63ff;--accent2:rgba(108,99,255,.12);
+  --mono:'IBM Plex Mono',monospace;--sans:'Bricolage Grotesque',sans-serif;
+  --safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:100vh;min-height:100dvh}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 20% 10%,rgba(108,99,255,.05) 0%,transparent 55%),radial-gradient(ellipse at 80% 90%,rgba(42,255,160,.04) 0%,transparent 55%);pointer-events:none;z-index:0}
+.wrap{position:relative;z-index:1;max-width:860px;margin:0 auto;padding:0 20px calc(40px + var(--safe-bottom));padding-top:var(--safe-top)}
+
+/* ── Header ── */
+header{display:flex;align-items:center;justify-content:space-between;padding:24px 0 20px;margin-bottom:20px;border-bottom:1px solid var(--border);gap:12px}
+.logo{display:flex;align-items:center;gap:11px;text-decoration:none}
+.logo-mark{width:28px;height:28px;background:linear-gradient(135deg,var(--accent),var(--up));border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.logo h1{font-family:var(--sans);font-size:16px;font-weight:800;color:var(--text)}
+.logo small{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;display:block}
+.header-right{display:flex;align-items:center;gap:8px}
+.admin-btn{display:flex;align-items:center;gap:6px;background:var(--s1);border:1px solid var(--border2);color:var(--muted);padding:6px 12px;border-radius:7px;font-family:var(--mono);font-size:11px;cursor:pointer;transition:.15s;white-space:nowrap}
+.admin-btn:hover{border-color:var(--accent);color:var(--accent)}
+.live-dot{width:5px;height:5px;border-radius:50%;background:var(--up);animation:blink 2s infinite;flex-shrink:0}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.last-update{font-size:10px;color:var(--muted)}
+
+/* ── Overall banner ── */
+.overall{display:flex;align-items:center;gap:14px;padding:16px 20px;border-radius:12px;border:1px solid;margin-bottom:24px}
+.overall.ok{background:var(--up2);border-color:rgba(42,255,160,.25)}
+.overall.incidents{background:var(--down2);border-color:rgba(255,61,107,.25)}
+.overall.maint{background:var(--warn2);border-color:rgba(255,184,48,.25)}
+.overall-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+.overall.ok .overall-dot{background:var(--up);box-shadow:0 0 8px var(--up)}
+.overall.incidents .overall-dot{background:var(--down);box-shadow:0 0 8px var(--down);animation:pulse 1.5s infinite}
+.overall.maint .overall-dot{background:var(--warn)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.overall-text{flex:1}
+.overall-title{font-family:var(--sans);font-size:17px;font-weight:700}
+.overall.ok .overall-title{color:var(--up)}
+.overall.incidents .overall-title{color:var(--down)}
+.overall.maint .overall-title{color:var(--warn)}
+.overall-sub{font-size:11px;color:var(--text);opacity:.75;margin-top:3px}
+
+/* ── Tags filter bar ── */
+.tag-bar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px;align-items:center}
+.tag-bar-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-right:2px}
+.tag-pill{padding:4px 12px;border-radius:20px;font-size:11px;cursor:pointer;transition:.15s;border:1px solid var(--border2);background:var(--faint);color:var(--muted);text-decoration:none;display:inline-block}
+.tag-pill:hover{border-color:var(--accent);color:var(--accent)}
+.tag-pill.active{background:var(--accent2);border-color:var(--accent);color:var(--accent)}
+.tag-pill.all{border-color:var(--border2)}
+.tag-pill.all.active{background:var(--s2);border-color:var(--text);color:var(--text)}
+
+/* ── Summary stats ── */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:24px}
+.stat-mini{background:var(--s1);border:1px solid var(--border);border-radius:9px;padding:12px 14px;text-align:center}
+.stat-mini .val{font-family:var(--sans);font-size:22px;font-weight:800;color:var(--text);line-height:1}
+.stat-mini .val.g{color:var(--up)}.stat-mini .val.r{color:var(--down)}
+.stat-mini .lbl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-top:5px}
+
+/* ── Service list ── */
+.section-title{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px}
+.service-card{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:8px;display:grid;grid-template-columns:10px 1fr repeat(3,90px);align-items:start;gap:14px;border-left:3px solid transparent;transition:border-color .15s}
+.service-card.up{border-left-color:var(--up)}.service-card.down{border-left-color:var(--down)}.service-card.unknown{border-left-color:var(--muted)}
+.s-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.s-dot.up{background:var(--up);box-shadow:0 0 6px var(--up)}.s-dot.down{background:var(--down);box-shadow:0 0 6px var(--down);animation:pulse 1.5s infinite}.s-dot.unknown{background:var(--muted)}
+.s-info{min-width:0}.s-info .name{font-family:var(--sans);font-weight:700;font-size:14px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.s-info .url{font-size:10px;color:#a0a4cc;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.s-info .tags{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap}
+.s-tag{font-size:9px;padding:1px 6px;border-radius:4px;background:var(--faint);color:var(--muted);border:1px solid var(--border2)}
+.s-metric{text-align:center}
+.s-metric .val{font-size:13px;font-weight:600;color:var(--text)}
+.s-metric .val.g{color:var(--up)}.s-metric .val.r{color:var(--down)}.s-metric .val.y{color:var(--warn)}
+.s-metric .lbl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-top:2px}
+.uptime-pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600}
+.uptime-pill.great{background:var(--up2);color:var(--up)}.uptime-pill.warn{background:var(--warn2);color:var(--warn)}.uptime-pill.bad{background:var(--down2);color:var(--down)}
+
+/* ── Sparkline checks ── */
+.checks-row{display:flex;gap:2px;margin-top:6px;flex-wrap:wrap}
+.chk{width:10px;height:10px;border-radius:2px;flex-shrink:0;cursor:default;transition:opacity .1s}
+.chk.up{background:var(--up);opacity:.5}
+.chk.down{background:var(--down);opacity:.9}
+.chk.up:hover{opacity:1}
+.chk.down:hover{opacity:1}
+
+/* ── Incidents section ── */
+.incident-card{background:var(--down2);border:1px solid rgba(255,61,107,.3);border-radius:10px;padding:14px 18px;margin-bottom:8px;display:flex;align-items:center;gap:12px}
+.inc-dot{width:8px;height:8px;border-radius:50%;background:var(--down);animation:pulse 1.5s infinite;flex-shrink:0}
+.inc-name{font-family:var(--sans);font-weight:700;color:var(--down)}
+.inc-since{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* ── Login modal ── */
+.login-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);z-index:100;align-items:center;justify-content:center;padding:20px}
+.login-overlay.open{display:flex}
+.login-card{background:var(--s1);border:1px solid var(--border2);border-radius:16px;padding:32px;width:100%;max-width:340px}
+.login-card h2{font-family:var(--sans);font-size:18px;font-weight:700;color:var(--text);margin-bottom:6px}
+.login-card p{font-size:11px;color:var(--muted);margin-bottom:20px}
+.lc-close{float:right;background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;margin-top:-4px}
+.lc-close:hover{color:var(--text)}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;margin-bottom:6px}
+.field input{width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:10px 13px;color:var(--text);font-family:var(--mono);font-size:13px;outline:none;transition:border-color .15s}
+.field input:focus{border-color:var(--accent)}
+.btn-login{width:100%;padding:11px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-family:var(--mono);font-size:13px;font-weight:600;cursor:pointer;transition:opacity .15s}
+.btn-login:hover{opacity:.85}
+.btn-login:disabled{opacity:.5;cursor:not-allowed}
+.login-error{background:var(--down2);border:1px solid rgba(255,61,107,.3);color:var(--down);padding:8px 12px;border-radius:7px;font-size:11px;margin-top:10px;display:none;text-align:center}
+.login-error.show{display:block}
+.login-attempts{font-size:10px;color:var(--muted);text-align:center;margin-top:6px;display:none}
+.login-attempts.show{display:block}
+.locked-countdown{font-family:var(--sans);font-size:24px;font-weight:800;color:var(--down);text-align:center;margin:12px 0;display:none}
+
+footer{text-align:center;margin-top:40px;padding-bottom:20px;font-size:10px;color:var(--muted)}
+footer a{color:var(--muted);text-decoration:none}
+footer a:hover{color:var(--text)}
+
+@media(max-width:600px){
+  .service-card{grid-template-columns:8px 1fr;row-gap:6px}
+  .service-card .s-metric{display:none}
+  .service-card .s-info{grid-column:2}
+  .service-card .s-status-row{grid-column:2;display:flex;gap:12px;align-items:center}
+  .chk{width:8px;height:8px}
+  .stats-row{grid-template-columns:repeat(2,1fr)}
+}
+/* ── Card styles (applied via data-card-style on body) ── */
+[data-card-style="bordered"] .service-card{border-width:2px}
+[data-card-style="accent-left"] .service-card{border-left-width:4px;border-radius:6px 10px 10px 6px}
+[data-card-style="pill"] .service-card{border-radius:32px;padding:14px 22px}
+[data-card-style="pill"] .checks-row{display:none}
+</style>
+<style id="theme-font-style"></style>
+<link rel="apple-touch-icon" href="/icon-180.png">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="logo" href="/status">
+      <div class="logo-mark">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <circle cx="8" cy="7" r="4" stroke="white" stroke-width="1.3"/>
+          <path d="M5 7Q6.5 4.5 8 7Q9.5 9.5 11 7" stroke="rgba(255,255,255,.7)" stroke-width="1" stroke-linecap="round" fill="none"/>
+          <circle cx="8" cy="7" r="1.2" fill="white"/>
+        </svg>
+      </div>
+      <div><h1 id="logoTitle">Estado de servicios</h1><small id="logoTag"></small></div>
+    </a>
+    <div class="header-right">
+      <div class="live-dot" title="Actualizando automáticamente"></div>
+      <span class="last-update" id="lastUpdate">–</span>
+      <a href="/network" style="display:flex;align-items:center;gap:6px;background:var(--s1);border:1px solid var(--border2);color:var(--muted);padding:6px 12px;border-radius:7px;font-family:var(--mono);font-size:11px;text-decoration:none;transition:.15s">🌐 Red</a>
+    <button class="admin-btn" onclick="openLogin()">⚙ Administrar</button>
+    </div>
+  </header>
+
+  <!-- Overall status banner -->
+  <div class="overall" id="overall" style="display:none">
+    <div class="overall-dot"></div>
+    <div class="overall-text">
+      <div class="overall-title" id="overall-title">–</div>
+      <div class="overall-sub" id="overall-sub">–</div>
+    </div>
+  </div>
+
+  <!-- Upcoming maintenance banner -->
+  <div id="maint-upcoming" style="display:none;margin-bottom:14px;background:rgba(201,122,0,.12);border:1px solid rgba(201,122,0,.4);border-radius:10px;padding:12px 16px">
+    <div style="font-weight:700;margin-bottom:4px;font-family:var(--sans);font-size:13px">🔧 Mantenimiento programado</div>
+    <div id="maint-upcoming-body" style="font-size:12px;color:var(--muted);line-height:1.7"></div>
+  </div>
+
+  <!-- Active incidents -->
+  <div id="incidents-section" style="display:none">
+    <div class="section-title" style="color:var(--down);margin-bottom:10px">⚠ Incidencias activas</div>
+    <div id="incidents-list"></div>
+  </div>
+
+  <!-- Tag filter bar -->
+  <div class="tag-bar" id="tagBar" style="display:none"></div>
+
+  <!-- Summary stats -->
+  <div class="stats-row" id="statsRow" style="display:none">
+    <div class="stat-mini"><div class="val" id="st-total">–</div><div class="lbl">Servicios</div></div>
+    <div class="stat-mini"><div class="val g" id="st-up">–</div><div class="lbl">Operativos</div></div>
+    <div class="stat-mini"><div class="val r" id="st-down">–</div><div class="lbl">Caídos</div></div>
+    <div class="stat-mini"><div class="val" id="st-avg">–</div><div class="lbl">T. respuesta medio</div></div>
+  </div>
+
+  <!-- Services list -->
+  <div class="section-title" id="servicesTitle" style="display:none">Servicios</div>
+  <div id="servicesList"><div style="text-align:center;padding:60px 20px;color:var(--muted)">Cargando…</div></div>
+
+  <!-- Community banner -->
+<div style="margin-top:48px;background:linear-gradient(135deg,rgba(108,99,255,.12),rgba(42,255,160,.08));border:1px solid rgba(108,99,255,.25);border-radius:14px;padding:28px 32px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap">
+  <div>
+    <div style="font-family:var(--sans);font-size:18px;font-weight:800;color:#fff;margin-bottom:6px">¿Quieres tu propio StatusMon?</div>
+    <div style="font-size:12px;color:var(--muted);font-family:var(--mono)">Self-hosted · Gratuito · Sin límites · <span id="banner-nodes" style="color:var(--up)">–</span> instalaciones en la red</div>
+  </div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap">
+    <a href="/about" style="background:var(--accent);color:#fff;padding:10px 20px;border-radius:8px;font-family:var(--mono);font-size:12px;font-weight:600;text-decoration:none;white-space:nowrap">Instalar gratis →</a>
+    <a href="/about" style="background:rgba(255,255,255,.05);color:var(--text);border:1px solid var(--border2);padding:10px 20px;border-radius:8px;font-family:var(--mono);font-size:12px;text-decoration:none;white-space:nowrap">Ver más info</a>
+  </div>
+</div>
+
+<footer>
+    Monitorizado con <a href="https://github.com" target="_blank">StatusMon</a>
+    · <a href="/admin">Panel de administración</a>
+  </footer>
+</div>
+
+<!-- Login modal -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-card" onclick="event.stopPropagation()">
+    <button class="lc-close" onclick="closeLogin()">×</button>
+    <h2>Administración</h2>
+    <p>Accede al panel completo de gestión</p>
+    <div class="field">
+      <label for="lc-pass">Contraseña</label>
+      <input type="password" id="lc-pass" placeholder="••••••••" autocomplete="current-password"
+        onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="btn-login" id="lc-btn" onclick="doLogin()">Entrar al panel</button>
+    <div class="login-error" id="lc-error"></div>
+    <div class="login-attempts" id="lc-attempts"></div>
+    <div class="locked-countdown" id="lc-countdown"></div>
+  </div>
+</div>
+
+<script>
+// ─── Tag from URL path ────────────────────────────────────────────
+const pathParts = location.pathname.split('/').filter(Boolean);
+// Tags at /status/tagname
+let activeTag = null;
+if (pathParts[0] === 'status' && pathParts[1]) activeTag = decodeURIComponent(pathParts[1]);
+else if (pathParts[0] && !['admin','widget','login','status'].includes(pathParts[0])) activeTag = decodeURIComponent(pathParts[0]);
+
+if (activeTag) {
+  document.getElementById('logoTag').textContent = activeTag;
+  document.getElementById('pageTitle').textContent = activeTag + ' · Estado';
+  document.title = activeTag + ' · Estado de servicios';
+}
+
+// ─── Helpers ─────────────────────────────────────────────────────
+const fmt = ms => ms == null ? '–' : ms < 1000 ? ms + ' ms' : (ms/1000).toFixed(2) + ' s';
+const fmtPct = v => v == null ? '–' : v.toFixed(1) + '%';
+const timeAgo = ts => {
+  const s = Math.round((Date.now() - ts) / 1000);
+  if (s < 60) return `hace ${s}s`;
+  if (s < 3600) return `hace ${Math.round(s/60)}min`;
+  return `hace ${Math.round(s/3600)}h`;
+};
+const uptimeCls = v => v == null ? '' : v >= 99 ? 'great' : v >= 95 ? 'warn' : 'bad';
+const rtCls = ms => ms == null ? '' : ms < 300 ? 'g' : ms < 1500 ? '' : ms < 3000 ? 'y' : 'r';
+
+// ─── Auth check ───────────────────────────────────────────────────
+async function checkIfLoggedIn() {
+  const t = localStorage.getItem('sm_token');
+  if (!t) return;
+  try {
+    const res = await fetch('/api/auth/status', { headers: { 'Authorization': 'Bearer ' + t } });
+    const d = await res.json();
+    if (d.authenticated) {
+      // Replace admin button with direct link
+      document.querySelector('.admin-btn').onclick = () => location.href = '/admin';
+      document.querySelector('.admin-btn').textContent = '⚙ Panel admin';
+      document.querySelector('.admin-btn').style.borderColor = 'var(--accent)';
+      document.querySelector('.admin-btn').style.color = 'var(--accent)';
+    }
+  } catch {}
+}
+
+// ─── Sparkline ───────────────────────────────────────────────────
+function renderChecks(checks) {
+  if (!checks || !checks.length) return '';
+  const dots = checks.map(c => {
+    const d = new Date(c.ts).toLocaleString('es', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+    return `<div class="chk ${c.up?'up':'down'}" title="${d}: ${c.up?'OK':'CAÍDO'}"></div>`;
+  }).join('');
+  return `<div style="grid-column:1/-1;padding-top:8px;border-top:1px solid var(--faint);margin-top:4px">
+    <div class="checks-row">${dots}</div>
+  </div>`;
+}
+
+// ─── Load data ────────────────────────────────────────────────────
+async function loadStatus() {
+  try {
+    const url = '/api/status/public' + (activeTag ? `?tag=${encodeURIComponent(activeTag)}` : '');
+    const res = await fetch(url);
+    const data = await res.json();
+    render(data);
+    document.getElementById('lastUpdate').textContent = timeAgo(data.checkedAt);
+  } catch(e) {
+    document.getElementById('servicesList').innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted)">Error al cargar datos</div>';
+  }
+}
+
+function render(data) {
+  const entries = Object.values(data.status || {});
+  const up = entries.filter(s => s.up);
+  const down = entries.filter(s => !s.up);
+  const times = up.map(s => s.meanResponseTime).filter(Boolean);
+  const avgTime = times.length ? Math.round(times.reduce((a,b)=>a+b,0)/times.length) : null;
+
+  // Overall banner
+  const overall = document.getElementById('overall');
+  overall.style.display = 'flex';
+  if (data.maintenanceMode) {
+    overall.className = 'overall maint';
+    document.getElementById('overall-title').textContent = '🔧 Mantenimiento en curso';
+    document.getElementById('overall-sub').textContent = 'Algunos servicios pueden estar temporalmente no disponibles';
+  } else if (down.length === 0) {
+    overall.className = 'overall ok';
+    document.getElementById('overall-title').textContent = 'Todos los servicios operativos';
+    document.getElementById('overall-sub').textContent = `${up.length} servicio${up.length !== 1 ? 's' : ''} monitorizados · Actualizado ${timeAgo(data.checkedAt)}`;
+  } else {
+    overall.className = 'overall incidents';
+    document.getElementById('overall-title').textContent = `${down.length} servicio${down.length !== 1 ? 's' : ''} con incidencias`;
+    document.getElementById('overall-sub').textContent = `${up.length} de ${entries.length} operativos`;
+  }
+
+  // Active incidents
+  const incSection = document.getElementById('incidents-section');
+  if (down.length > 0) {
+    incSection.style.display = 'block';
+    document.getElementById('incidents-list').innerHTML = down.map(s => `
+      <div class="incident-card">
+        <div class="inc-dot"></div>
+        <div>
+          <div class="inc-name">${s.name}</div>
+          <div class="inc-since">${s.url} · Detectado ${timeAgo(s.lastCheck)}</div>
+        </div>
+      </div>`).join('');
+  } else {
+    incSection.style.display = 'none';
+  }
+
+  // Tag filter bar
+  const tagBar = document.getElementById('tagBar');
+  if (data.allTags && data.allTags.length > 0) {
+    tagBar.style.display = 'flex';
+    const allLink = `<a class="tag-pill all${!activeTag?' active':''}" href="/status">Todos</a>`;
+    const tagLinks = data.allTags.map(t =>
+      `<a class="tag-pill${activeTag===t?' active':''}" href="/status/${encodeURIComponent(t)}">${t}</a>`
+    ).join('');
+    tagBar.innerHTML = `<span class="tag-bar-label">Filtrar:</span>${allLink}${tagLinks}`;
+  }
+
+  // Summary stats
+  document.getElementById('statsRow').style.display = '';
+  document.getElementById('st-total').textContent = entries.length;
+  document.getElementById('st-up').textContent = up.length;
+  document.getElementById('st-down').textContent = down.length;
+  document.getElementById('st-avg').textContent = fmt(avgTime);
+  document.getElementById('servicesTitle').style.display = 'block';
+
+  // Services list
+  if (!entries.length) {
+    document.getElementById('servicesList').innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted)">Sin servicios configurados</div>';
+    return;
+  }
+
+  // Sort: down first, then by name
+  const sorted = [...entries].sort((a, b) => {
+    if (!a.up && b.up) return -1;
+    if (a.up && !b.up) return 1;
+    return a.name.localeCompare(b.name);
+  });
+
+  document.getElementById('servicesList').innerHTML = sorted.map(s => {
+    const cls = s.up ? 'up' : 'down';
+    const dotCls = s.up ? 'up' : 'down';
+    const tags = (s.tags || []).map(t => `<span class="s-tag">${t}</span>`).join('');
+    return `<div class="service-card ${cls}">
+      <div class="s-dot ${dotCls}"></div>
+      <div class="s-info">
+        <div class="name">${s.name}</div>
+        <div class="url">${s.url}</div>
+        ${tags ? `<div class="tags">${tags}</div>` : ''}
+      </div>
+      <div class="s-metric">
+        <div class="val ${s.up ? '' : 'r'}">${s.up ? 'OK' : 'CAÍDO'}</div>
+        <div class="lbl">${timeAgo(s.lastCheck)}</div>
+      </div>
+      <div class="s-metric">
+        <div class="val ${rtCls(s.meanResponseTime)}">${fmt(s.meanResponseTime)}</div>
+        <div class="lbl">t. respuesta</div>
+      </div>
+      <div class="s-metric">
+        <span class="uptime-pill ${uptimeCls(s.uptimePct)}">${fmtPct(s.uptimePct)}</span>
+        <div class="lbl">uptime 24h</div>
+      </div>
+      ${renderChecks(s.recentChecks)}
+    </div>`;
+  }).join('');
+}
+
+// ─── Login modal ──────────────────────────────────────────────────
+function openLogin() { document.getElementById('loginOverlay').classList.add('open'); setTimeout(() => document.getElementById('lc-pass').focus(), 50); }
+function closeLogin() { document.getElementById('loginOverlay').classList.remove('open'); }
+document.getElementById('loginOverlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeLogin(); });
+
+async function doLogin() {
+  const pass = document.getElementById('lc-pass').value;
+  if (!pass) return;
+  const btn = document.getElementById('lc-btn');
+  btn.disabled = true; btn.textContent = 'Verificando…';
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pass })
+    });
+    const d = await res.json();
+    btn.disabled = false; btn.textContent = 'Entrar al panel';
+    if (d.ok) {
+      localStorage.setItem('sm_token', d.token);
+      location.href = '/admin';
+    } else if (res.status === 429) {
+      document.getElementById('lc-error').textContent = d.error;
+      document.getElementById('lc-error').classList.add('show');
+      startCountdown(d.remaining);
+    } else {
+      document.getElementById('lc-error').textContent = d.error || 'Contraseña incorrecta';
+      document.getElementById('lc-error').classList.add('show');
+      if (d.attemptsLeft !== undefined) {
+        const el = document.getElementById('lc-attempts');
+        el.textContent = `Intentos restantes: ${d.attemptsLeft}`;
+        el.classList.add('show');
+      }
+    }
+  } catch(e) {
+    btn.disabled = false; btn.textContent = 'Entrar al panel';
+    document.getElementById('lc-error').textContent = 'Error de conexión';
+    document.getElementById('lc-error').classList.add('show');
+  }
+}
+
+function startCountdown(sec) {
+  let remaining = sec;
+  const el = document.getElementById('lc-countdown');
+  const btn = document.getElementById('lc-btn');
+  el.style.display = 'block'; btn.disabled = true;
+  const tick = () => {
+    el.textContent = `${Math.floor(remaining/60)}:${String(remaining%60).padStart(2,'0')}`;
+    if (remaining-- <= 0) { el.style.display = 'none'; btn.disabled = false; document.getElementById('lc-error').classList.remove('show'); return; }
+    setTimeout(tick, 1000);
+  };
+  tick();
+}
+
+// ─── Status page theme ────────────────────────────────────────────
+async function applyStatusTheme() {
+  try {
+    const res = await fetch('/api/status-theme');
+    if (!res.ok) return;
+    const t = await res.json();
+    const root = document.documentElement;
+    if (t.bg)     { root.style.setProperty('--bg', t.bg); root.style.setProperty('--s1', t.bg); document.getElementById('themeColor').content = t.bg; }
+    if (t.text)   { root.style.setProperty('--text', t.text); }
+    if (t.accent) { root.style.setProperty('--accent', t.accent); root.style.setProperty('--accent2', t.accent+'1a'); }
+    if (t.cardStyle && t.cardStyle !== 'default') document.body.dataset.cardStyle = t.cardStyle;
+    if (t.title)  { document.getElementById('pageTitle').textContent = t.title; document.getElementById('logoTitle').textContent = t.title; }
+    if (t.font) {
+      // Load from sw font cache (sw.js intercepts Google Fonts and caches)
+      const fontId = t.font.replace(/\+/g,' ');
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = `https://fonts.googleapis.com/css2?family=${t.font}:wght@400;600;700&display=swap`;
+      document.head.appendChild(link);
+      document.getElementById('theme-font-style').textContent =
+        `body,h1,h2,.s-info .name{font-family:'${fontId}',var(--mono)!important}`;
+    }
+    if (t.showTtfb === false) document.querySelectorAll('.s-metric:nth-child(4)').forEach(el=>el.style.display='none');
+    if (t.showUptime === false) document.querySelectorAll('.s-metric:nth-child(5)').forEach(el=>el.style.display='none');
+  } catch(e) { /* non-fatal — theme is cosmetic */ }
+}
+
+// ─── Upcoming maintenance banner ─────────────────────────────────
+async function loadMaintenanceBanner() {
+  try {
+    const r = await fetch('/api/sites');
+    if (!r.ok) return;
+    const { sites } = await r.json();
+    const now   = new Date();
+    const dayMs = 86400000;
+    const upcoming = [];
+    (sites || []).forEach(site => {
+      if (site.public === false) return;
+      (site.maintenanceWindows || []).forEach(w => {
+        (w.days || []).forEach(d => {
+          const targetDay = new Date();
+          const diff = (d - now.getDay() + 7) % 7;
+          targetDay.setDate(now.getDate() + diff);
+          const [sh, sm] = (w.start || '00:00').split(':').map(Number);
+          const [eh, em] = (w.end   || '00:00').split(':').map(Number);
+          const startMs = targetDay.setHours(sh, sm, 0, 0);
+          const endMs   = new Date(targetDay).setHours(eh, em, 0, 0);
+          const inNext48 = startMs - Date.now() < 2 * dayMs && startMs > Date.now();
+          const inProgress = Date.now() >= startMs && Date.now() < endMs;
+          if (inNext48 || inProgress) {
+            upcoming.push({ site: site.name, start: startMs, end: endMs, inProgress });
+          }
+        });
+      });
+    });
+    const banner = document.getElementById('maint-upcoming');
+    const body   = document.getElementById('maint-upcoming-body');
+    if (!upcoming.length) { banner.style.display = 'none'; return; }
+    const fmtTime = ts => new Date(ts).toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'});
+    const fmtDate = ts => new Date(ts).toLocaleDateString('es',{weekday:'short',day:'numeric',month:'short'});
+    body.innerHTML = upcoming.map(u =>
+      u.inProgress
+        ? `<div>🔧 <strong>${u.site}</strong> — en mantenimiento ahora hasta las ${fmtTime(u.end)}</div>`
+        : `<div>📅 <strong>${u.site}</strong> — mantenimiento programado el ${fmtDate(u.start)} de ${fmtTime(u.start)} a ${fmtTime(u.end)}</div>`
+    ).join('');
+    banner.style.display = 'block';
+  } catch {}
+}
+
+// ─── Init ─────────────────────────────────────────────────────────
+applyStatusTheme();
+checkIfLoggedIn();
+loadMaintenanceBanner();
+loadStatus();
+setInterval(loadStatus, 60000);
+setInterval(loadMaintenanceBanner, 300000);
+
+// Load community stats for banner
+fetch('/api/about').then(r=>r.json()).then(d=>{
+  const el=document.getElementById('banner-nodes');
+  if(el&&d.networkStats?.totalPeers>0)el.textContent=d.networkStats.totalPeers+' instalaciones en la red';
+  else if(el)el.textContent='únete a la red';
+}).catch(()=>{});
+</script>
+</body>
+</html>
