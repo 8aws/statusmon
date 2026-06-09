@@ -3,6 +3,22 @@
   "remoteUrl": "https://raw.githubusercontent.com/8aws/statusmon/main/public/releases.json",
   "releases": [
     {
+      "version": "5.6.11",
+      "date": "2026-06-09",
+      "title": "Descarga y restauración de backups",
+      "description": "Botón de descarga en cada backup. Restaurar desde backup ZIP (para migrar entre instancias). Los históricos y sitios se migran completos; solo la contraseña SMTP debe reintroducirse.",
+      "highlights": [
+        "Botón ⬇ para descargar cualquier backup como ZIP",
+        "Botón Restaurar desde backup: sube un ZIP y restaura (reinicio automático)",
+        "Migración entre instancias: descarga backup de origen, restaura en destino",
+        "Se crea backup automático del estado actual antes de restaurar"
+      ],
+      "downloadUrl": "https://github.com/8aws/statusmon/releases/download/v5.6.11/statusmon-v5.6.11.zip",
+      "available": true,
+      "size": 1245000,
+      "changelog": "https://github.com/8aws/statusmon/releases/tag/v5.6.11"
+    },
+    {
       "version": "5.6.10",
       "date": "2026-06-09",
       "title": "Badge de update → actualización directa; versión dinámica en header",

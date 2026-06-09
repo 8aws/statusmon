@@ -920,8 +920,13 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
       <div class="settings-section">
         <div class="settings-section-title">Backups en /data/backups</div>
         <div id="backups-list">Cargando…</div>
-        <button class="settings-save" onclick="clearAllBackups()" style="margin-top:8px;background:var(--faint);border:1px solid var(--border2);color:var(--muted)">Eliminar todos los backups</button>
+        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+          <button class="settings-save" onclick="clearAllBackups()" style="background:var(--faint);border:1px solid var(--border2);color:var(--muted)">Eliminar todos</button>
+          <button class="btn btn-sm" onclick="document.getElementById('restore-file').click()" title="Restaurar desde un backup descargado previamente">↩ Restaurar desde backup…</button>
+          <input type="file" id="restore-file" accept=".zip" style="display:none" onchange="restoreFromBackup(this)">
+        </div>
         <div id="backups-result" style="font-size:10px;margin-top:5px;color:var(--muted)"></div>
+        <div id="restore-log" style="font-size:11px;margin-top:6px;display:none"></div>
       </div>
 
       <div class="settings-section">
@@ -2661,7 +2666,10 @@ async function loadSistemaTab(){
             <div style="font-size:11px;font-family:var(--mono)">${b.name}</div>
             <div style="font-size:10px;color:var(--muted)">${fmtSize(b.size)} · ${b.files} archivos · ${new Date(b.ts).toLocaleString('es')}</div>
           </div>
-          <button class="icon-btn del" onclick="deleteBackup('${b.name}')" title="Eliminar este backup" style="flex-shrink:0">✕</button>
+          <div style="display:flex;gap:6px;flex-shrink:0">
+            <a href="/api/backups/${encodeURIComponent(b.name)}/download" class="btn btn-sm" title="Descargar backup" style="text-decoration:none;padding:3px 8px;font-size:11px">⬇</a>
+            <button class="icon-btn del" onclick="deleteBackup('${b.name}')" title="Eliminar este backup">✕</button>
+          </div>
         </div>`).join('');
     }
   }catch{document.getElementById('backups-list').textContent='No disponible.';}
@@ -2671,6 +2679,20 @@ async function deleteBackup(name){
   if(!confirm(`¿Eliminar backup "${name}"?`))return;
   await apiFetch(`/api/backups/${encodeURIComponent(name)}`,{method:'DELETE'});
   loadSistemaTab();
+}
+
+async function restoreFromBackup(input){
+  const file=input.files[0]; if(!file)return;
+  if(!confirm(`¿Restaurar desde "${file.name}"?\n\nSe creará un backup del estado actual antes de restaurar. La instancia se reiniciará al terminar.\n\nNota: la contraseña SMTP deberá reintroducirse tras la restauración.`)){input.value='';return;}
+  const log=document.getElementById('restore-log');
+  log.style.display='';log.style.color='var(--muted)';log.textContent='Subiendo backup…';
+  try{
+    const d=await xhrUpload('/api/backups/restore',file,pct=>{log.textContent=`Subiendo… ${pct}%`;});
+    if(d.error){log.style.color='var(--down)';log.textContent='✗ '+d.error;input.value='';return;}
+    log.style.color='var(--up)';
+    log.textContent=`✓ Restaurado (${d.files} archivos). Backup previo: ${d.backup}. Reiniciando…`;
+  }catch(e){log.style.color='var(--down)';log.textContent='Error: '+e.message;}
+  input.value='';
 }
 
 async function clearAllBackups(){

@@ -5,6 +5,17 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 
 ---
 
+## [5.6.11] — 2026-06-09
+
+### Added
+- **Descarga de backups** — botón ⬇ en cada backup del panel de Sistema.
+- **Restaurar desde backup** — sube un ZIP de backup en cualquier instancia para restaurar sitios, histórico y ajustes. Útil para migrar entre máquinas.
+- Backup automático del estado actual antes de cada restauración.
+
+> Nota: `.secret` (clave AES del SMTP) no se incluye en backups — la contraseña SMTP debe reintroducirse tras restaurar en una instancia nueva.
+
+---
+
 ## [5.6.10] — 2026-06-09
 
 ### Changed

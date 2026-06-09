@@ -9,7 +9,7 @@ const { execSync } = require('child_process');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 
-const APP_VERSION = '5.6.10';
+const APP_VERSION = '5.6.11';
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const netCrypto = require('./network/crypto');
@@ -1702,6 +1702,65 @@ app.get('/api/data/stats', (req, res) => {
 });
 
 // Delete old backups
+// GET /api/backups/:name/download — descarga backup como ZIP
+app.get('/api/backups/:name/download', requireAuth, (req, res) => {
+  const name = path.basename(req.params.name);
+  const backupDir = path.join(BACKUPS_DIR, name);
+  if (!fs.existsSync(backupDir)) return res.status(404).json({ error: 'Backup no encontrado' });
+  const tmpZip = path.join(BACKUPS_DIR, `_dl_${name}.zip`);
+  try {
+    execSync(`cd "${BACKUPS_DIR}" && zip -r "${tmpZip}" "${name}/"`, { timeout: 30000 });
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename="${name}.zip"`);
+    const stream = fs.createReadStream(tmpZip);
+    stream.pipe(res);
+    stream.on('close', () => { try { fs.unlinkSync(tmpZip); } catch {} });
+    stream.on('error', () => { try { fs.unlinkSync(tmpZip); } catch {} res.end(); });
+  } catch(e) {
+    try { fs.unlinkSync(tmpZip); } catch {}
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /api/backups/restore — sube ZIP de backup y restaura (reinicia)
+app.post('/api/backups/restore', requireAuth,
+  express.raw({ type: ['application/zip','application/octet-stream','application/x-zip-compressed'], limit: '100mb' }),
+  async (req, res) => {
+    if (!req.body || !req.body.length) return res.status(400).json({ error: 'Sin archivo' });
+    const restoreDir = path.join(DATA_DIR, '_restore_tmp');
+    const tmpZip    = path.join(DATA_DIR, '_restore.zip');
+    try {
+      fs.writeFileSync(tmpZip, req.body);
+      // Backup del estado actual antes de restaurar
+      const backup = createBackup('pre-restore');
+      // Extraer ZIP
+      fs.rmSync(restoreDir, { recursive: true, force: true });
+      fs.mkdirSync(restoreDir, { recursive: true });
+      execSync(`unzip -o "${tmpZip}" -d "${restoreDir}"`, { timeout: 30000 });
+      // Encontrar la carpeta raíz dentro del ZIP (backup-xxx-xxx/)
+      const entries = fs.readdirSync(restoreDir).filter(e =>
+        !e.startsWith('.') && e !== '__MACOSX' &&
+        fs.statSync(path.join(restoreDir, e)).isDirectory()
+      );
+      const srcDir = entries.length === 1 ? path.join(restoreDir, entries[0]) : restoreDir;
+      // Copiar ficheros a DATA_DIR (nunca .secret — cada instancia tiene su propia clave)
+      const files = fs.readdirSync(srcDir).filter(f =>
+        fs.statSync(path.join(srcDir, f)).isFile() && f !== '.secret'
+      );
+      files.forEach(f => fs.copyFileSync(path.join(srcDir, f), path.join(DATA_DIR, f)));
+      // Limpiar temporales
+      fs.rmSync(restoreDir, { recursive: true, force: true });
+      fs.unlinkSync(tmpZip);
+      res.json({ ok: true, files: files.length, backup: backup.name, message: 'Reiniciando…' });
+      setTimeout(() => process.exit(0), 600);
+    } catch(e) {
+      try { fs.rmSync(restoreDir, { recursive: true, force: true }); } catch {}
+      try { fs.unlinkSync(tmpZip); } catch {}
+      res.status(500).json({ error: e.message });
+    }
+  }
+);
+
 app.delete('/api/backups/:name', (req, res) => {
   try {
     const target = path.join(BACKUPS_DIR, path.basename(req.params.name));
