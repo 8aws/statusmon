@@ -54,5 +54,5 @@ x-casaos:
       en_us: |
         First launch: open /admin to set your admin password.
         Data is stored in ~/AppData/statusMon on your ZimaOS.
-  index: /
+  index: /admin
   port_map: "3000"

@@ -406,7 +406,15 @@ function render(data) {
 }
 
 // ─── Login modal ──────────────────────────────────────────────────
-function openLogin() { document.getElementById('loginOverlay').classList.add('open'); setTimeout(() => document.getElementById('lc-pass').focus(), 50); }
+async function openLogin() {
+  try {
+    const res = await fetch('/api/auth/status');
+    const d = await res.json();
+    if (!d.authEnabled) { location.href = '/admin'; return; }
+  } catch {}
+  document.getElementById('loginOverlay').classList.add('open');
+  setTimeout(() => document.getElementById('lc-pass').focus(), 50);
+}
 function closeLogin() { document.getElementById('loginOverlay').classList.remove('open'); }
 document.getElementById('loginOverlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeLogin(); });
 
