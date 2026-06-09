@@ -3,6 +3,23 @@
   "remoteUrl": "https://raw.githubusercontent.com/8aws/statusmon/main/public/releases.json",
   "releases": [
     {
+      "version": "5.6.16",
+      "date": "2026-06-09",
+      "title": "Fix responsive móvil — iPhone/Android",
+      "description": "Correcciones de diseño en pantallas pequeñas: fix del zoom automático de iOS en inputs, header compacto en 375px, tabs de ajustes con scroll horizontal, kbd-hint oculto en táctil, heatmap con scroll horizontal correcto.",
+      "highlights": [
+        "Fix iOS: inputs con font-size ≥ 16px para evitar auto-zoom al enfocar",
+        "Header compacto en ≤480px: se oculta 'último check' y se reducen márgenes",
+        "Settings tabs: scroll horizontal en panel estrecho (7 pestañas no desbordaban)",
+        "Heatmap (24 cols): overflow-x scroll garantizado en móvil",
+        "Kbd-hint oculto en móvil (el panel de atajos de teclado no aplica en táctil)"
+      ],
+      "downloadUrl": "https://github.com/8aws/statusmon/releases/download/v5.6.16/statusmon-v5.6.16.zip",
+      "available": true,
+      "size": 1253000,
+      "changelog": "https://github.com/8aws/statusmon/releases/tag/v5.6.16"
+    },
+    {
       "version": "5.6.15",
       "date": "2026-06-09",
       "title": "Análisis avanzado — heatmap, anomaly detection, redirect chain, content check",

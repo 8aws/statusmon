@@ -357,6 +357,9 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
 .kbd-hint-toggle.show{display:block}
 .site-row.kb-focus{border-color:var(--accent)!important;background:var(--accent2)!important}
 
+/* Heatmap — always scrollable (24-col table) */
+#d-heatmap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+
 @media(max-width:900px){
   .site-row{grid-template-columns:18px 9px 1fr 80px auto}
   .site-row .sparkline-wrap,.site-row .col-c:nth-child(6),.site-row .col-c:nth-child(7){display:none}
@@ -374,6 +377,42 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
   header{padding:16px 0 14px}
   .wrap{padding:0 14px calc(60px + var(--safe-bottom))}
   .logo h1{font-size:16px}
+  /* iOS: prevent auto-zoom on input focus (requires font-size ≥ 16px) */
+  input,select,textarea{font-size:16px!important}
+}
+/* ── iPhone / narrow mobile fixes ── */
+@media(max-width:480px){
+  /* Header — compact to fit on 375px without wrapping */
+  .logo small{display:none}
+  #lastCheckInfo{display:none}
+  .header-right{gap:5px}
+  .btn{padding:5px 10px;font-size:10px}
+  .btn-icon{width:27px;height:27px;font-size:12px}
+
+  /* Settings tabs — scrollable row (7 tabs overflow on narrow panel) */
+  .settings-tabs{overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:3px 0}
+  .settings-tabs::-webkit-scrollbar{display:none}
+  .settings-tab{flex:0 0 auto;padding:5px 8px;font-size:10px;white-space:nowrap}
+
+  /* Keyboard shortcut hint — irrelevant on touch, hides bottom-right overlap */
+  .kbd-hint-toggle,.kbd-hint{display:none!important}
+
+  /* Chart cards — tighter padding so heatmap overflow-x works */
+  .chart-card{padding:14px 10px}
+
+  /* Detail header text */
+  .detail-title{font-size:16px}
+
+  /* Modal — tighter on small screens */
+  .modal-bg{padding:12px}
+  .modal{padding:20px 14px}
+
+  /* Summary + NAS — ensure 2-col (already set at 900px, just confirm) */
+  .summary{grid-template-columns:repeat(2,1fr)}
+  #nasBar{grid-template-columns:repeat(2,1fr)}
+
+  /* Drag handle — visually hidden on touch (pointer events kept for bulk-checkbox) */
+  .drag-handle{color:transparent;font-size:0;width:12px}
 }
 </style>
 </head>
@@ -613,7 +652,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
 <!-- Keyboard shortcut hint -->
 <button class="kbd-hint-toggle" id="kbdToggle" onclick="toggleKbdHint()" title="Atajos de teclado">⌨</button>
 <div class="kbd-hint" id="kbdHint">
-  <h4>Atajos de teclado</h4>
+  <h4>Atajos de teclado <button onclick="toggleKbdHint()" style="float:right;background:none;border:none;cursor:pointer;color:var(--muted);font-size:14px;line-height:1;padding:0;margin-top:-2px">×</button></h4>
   <div class="krow"><span>Refrescar</span><code>R</code></div>
   <div class="krow"><span>Nuevo sitio</span><code>N</code></div>
   <div class="krow"><span>Buscar</span><code>/</code></div>

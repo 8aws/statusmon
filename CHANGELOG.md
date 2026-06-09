@@ -5,6 +5,17 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 
 ---
 
+## [5.6.16] — 2026-06-09
+
+### Fixed
+- **iOS input zoom** — los campos de texto y selects tenían `font-size:12px`; iOS hace zoom automático en cualquier input < 16px. Ahora se fuerza `font-size:16px` en el breakpoint ≤560px, eliminando el salto de viewport al enfocar un campo en iPhone/iPad.
+- **Header en iPhone** — a 375–480px el `header-right` podía desbordarse en dos filas (muchos botones). Se oculta `#lastCheckInfo`, se reduce el gap a 5px y se compactan `.btn` y `.btn-icon`, logrando que todo quepa en una sola línea.
+- **Settings tabs** — el panel de ajustes tiene 7 pestañas (General, Servidor, Alertas, Correo, Sistema, Red, Estado público) que no caben en 327px. Ahora el contenedor es `overflow-x:auto; flex-wrap:nowrap` con scroll horizontal sin scrollbar visible.
+- **Heatmap overflow** — la tabla del heatmap tiene 24 columnas y puede superar el ancho de la pantalla. Se añade `overflow-x:auto` al contenedor `#d-heatmap` y se reduce el padding de `.chart-card` en móvil para maximizar el espacio disponible.
+- **Kbd-hint en móvil** — el panel de atajos de teclado (fijo abajo-derecha) es irrelevante en pantallas táctiles y podía tapar contenido. Se oculta con `display:none` en ≤480px.
+
+---
+
 ## [5.6.15] — 2026-06-09
 
 ### Added
