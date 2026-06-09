@@ -21,8 +21,8 @@ services:
         published: "3000"
         protocol: tcp
     volumes:
-      # ZimaOS 1.6.x: AppData vive bajo ~/AppData/ (/root/AppData/ en disco)
-      - $HOME/AppData/statusMon:/data
+      # ZimaOS 1.6.x corre como root: /root/AppData/ = ~/AppData/
+      - /root/AppData/statusMon:/data
       - /proc:/host/proc:ro
     logging:
       driver: "json-file"
@@ -54,5 +54,5 @@ x-casaos:
       en_us: |
         First launch: open /admin to set your admin password.
         Data is stored in ~/AppData/statusMon on your ZimaOS.
-  index: /admin
+  index: /
   port_map: "3000"
