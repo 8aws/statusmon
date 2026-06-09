@@ -2987,8 +2987,12 @@ function quickUpdate(){
   switchTab('sistema');
   setTimeout(()=>{
     const inp=document.getElementById('update-url');
-    if(inp&&url){inp.value=url;fetchUpdate();}
-  },300);
+    if(inp&&url){
+      inp.value=url;
+      inp.style.borderColor='var(--accent)';
+      inp.scrollIntoView({behavior:'smooth',block:'center'});
+    }
+  },400);
 }
 
 checkAuth();

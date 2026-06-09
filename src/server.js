@@ -9,7 +9,7 @@ const { execSync } = require('child_process');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 
-const APP_VERSION = '5.6.12';
+const APP_VERSION = '5.6.13';
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const netCrypto = require('./network/crypto');
@@ -1268,7 +1268,8 @@ const UPDATE_ZIP = path.join(UPDATE_DIR, 'pending.zip');
 const UPDATE_META = path.join(UPDATE_DIR, 'meta.json');
 const APP_DIR = path.join(__dirname, '..');
 
-function downloadToFile(url, dest) {
+function downloadToFile(url, dest, _redirects) {
+  if ((_redirects || 0) > 5) return Promise.reject(new Error('Demasiadas redirecciones'));
   return new Promise((resolve, reject) => {
     try {
       const u = new URL(url);
@@ -1276,6 +1277,11 @@ function downloadToFile(url, dest) {
       const lib = u.protocol === 'https:' ? https : http;
       const file = fs.createWriteStream(dest);
       lib.get(url, { timeout: 60000, headers: { 'User-Agent': 'StatusMon-Updater/1.0' } }, (res) => {
+        // Seguir redirecciones (GitHub Releases usa 302 → S3/CDN)
+        if ([301, 302, 307, 308].includes(res.statusCode) && res.headers.location) {
+          file.close(); try { fs.unlinkSync(dest); } catch {}
+          return downloadToFile(res.headers.location, dest, (_redirects||0)+1).then(resolve).catch(reject);
+        }
         if (res.statusCode !== 200) {
           file.close(); try { fs.unlinkSync(dest); } catch {}
           return reject(new Error(`HTTP ${res.statusCode}`));
