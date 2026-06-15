@@ -16,6 +16,8 @@ services:
     environment:
       - PORT=3000
       - DATA_DIR=/data
+      # Backups fuera de /data para que no se pierdan con el volumen de datos
+      - BACKUPS_DIR=/backups
     ports:
       - target: 3000
         published: "3000"
@@ -23,6 +25,7 @@ services:
     volumes:
       # ZimaOS 1.6.x corre como root: /root/AppData/ = ~/AppData/
       - /root/AppData/statusMon:/data
+      - /root/AppData/statusMon-backups:/backups
       - /proc:/host/proc:ro
     logging:
       driver: "json-file"

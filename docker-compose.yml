@@ -15,18 +15,23 @@ services:
       # DATA_DIR: directorio dentro del contenedor donde se guardan todos los datos.
       # La ruta del host se controla en volumes: abajo.
       - DATA_DIR=/data
+      # BACKUPS_DIR: carpeta de backups FUERA de /data, para que un fallo o
+      # pérdida del volumen de datos no se lleve también las copias.
+      - BACKUPS_DIR=/backups
 
     volumes:
-      # ── Datos persistentes (elige UNA opción) ──────────────────────────
+      # ── Datos persistentes (USA SIEMPRE un bind-mount del host) ─────────
       #
-      # Opción A — ruta explícita en el host (recomendado para NAS/VPS)
-      # Cambia /opt/statusmon/data por la ruta que prefieras en tu servidor.
-      # Crea la carpeta antes si no existe: mkdir -p /opt/statusmon/data
+      # IMPORTANTE: monta una ruta explícita del host. Si no montas nada,
+      # los datos viven dentro del contenedor y se PIERDEN al recrearlo.
+      # Crea las carpetas antes si no existen:
+      #   mkdir -p /opt/statusmon/data /opt/statusmon/backups
+      # Cambia /opt/statusmon por la ruta que prefieras en tu servidor.
       - /opt/statusmon/data:/data
       #
-      # Opción B — volumen Docker gestionado (más simple, sin ruta visible)
-      # Comenta la línea de arriba y descomenta esta:
-      # - statusmon_data:/data
+      # ── Backups, en un bind-mount SEPARADO (recomendado) ───────────────
+      # Mantenerlos fuera de /data evita que se borren junto con los datos.
+      - /opt/statusmon/backups:/backups
       #
       # ── Stats del servidor (/proc del host, solo lectura) ─────────────
       - /proc:/host/proc:ro
@@ -66,7 +71,3 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-
-# Solo necesario si usas la Opción B (volumen gestionado)
-# volumes:
-#   statusmon_data:

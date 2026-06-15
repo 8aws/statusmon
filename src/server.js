@@ -64,7 +64,7 @@ function buildZipBuffer(entries) {
 // ──────────────────────────────────────────────────────────────────
 const nodemailer = require('nodemailer');
 
-const APP_VERSION = '5.6.16';
+const APP_VERSION = '5.7.0';
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const netCrypto = require('./network/crypto');
@@ -82,9 +82,67 @@ const CONFIG_FILE = path.join(DATA_DIR, 'config.json');
 const SITES_FILE = path.join(DATA_DIR, 'sites.json');
 const HISTORY_FILE = path.join(DATA_DIR, 'history.json');
 const METRICS_FILE = path.join(DATA_DIR, 'metrics.json');
-const BACKUPS_DIR   = path.join(DATA_DIR, 'backups');
+// BACKUPS_DIR defaults INSIDE /data for backwards compat, but should point to a
+// SEPARATE host volume so a loss/corruption of /data doesn't take backups with it.
+// Override with BACKUPS_DIR env (e.g. a second bind-mount like /opt/statusmon/backups).
+const BACKUPS_DIR   = process.env.BACKUPS_DIR || path.join(DATA_DIR, 'backups');
 const FAVICONS_DIR  = path.join(DATA_DIR, 'favicons');
 const RELEASES_DIR  = path.join(DATA_DIR, 'releases');
+
+// ─── Crash-safe writes ────────────────────────────────────────────
+// fs.writeFileSync truncates-in-place with no fsync: on a power loss the
+// journaling FS commonly leaves the target at 0 bytes. Write to a temp file,
+// fsync it, then atomically rename over the target so a crash never leaves a
+// half-written or empty file in place.
+function atomicWriteFileSync(file, data) {
+  const tmp = `${file}.tmp-${process.pid}`;
+  const fd = fs.openSync(tmp, 'w');
+  try {
+    fs.writeSync(fd, data);
+    fs.fsyncSync(fd);          // flush file contents to disk
+  } finally {
+    fs.closeSync(fd);
+  }
+  fs.renameSync(tmp, file);    // atomic on the same filesystem
+  // fsync the directory so the rename itself is durable
+  try {
+    const dfd = fs.openSync(path.dirname(file), 'r');
+    try { fs.fsyncSync(dfd); } finally { fs.closeSync(dfd); }
+  } catch { /* some platforms disallow dir fsync; rename is still atomic */ }
+}
+
+// Try to recover a data file (by basename, e.g. 'sites.json') from the most
+// recent backup that contains a valid, non-empty copy. Returns the parsed
+// object or null. Used when the live file is found corrupt/empty after a crash.
+function recoverFromBackup(basename) {
+  try {
+    if (!fs.existsSync(BACKUPS_DIR)) return null;
+    const dirs = fs.readdirSync(BACKUPS_DIR)
+      .filter(d => { try { return fs.statSync(path.join(BACKUPS_DIR, d)).isDirectory(); } catch { return false; } })
+      .sort().reverse();   // newest first (timestamped names sort lexicographically)
+    for (const d of dirs) {
+      const f = path.join(BACKUPS_DIR, d, basename);
+      try {
+        const raw = fs.readFileSync(f, 'utf8');
+        if (!raw.trim()) continue;
+        return { data: JSON.parse(raw), from: d };
+      } catch { continue; }
+    }
+  } catch { /* fall through */ }
+  return null;
+}
+
+// Move a corrupt file aside (once) so it's preserved for inspection and never
+// silently overwritten with defaults.
+function preserveCorrupt(file) {
+  try {
+    if (fs.existsSync(file)) {
+      const aside = `${file}.corrupt-${Date.now()}`;
+      fs.copyFileSync(file, aside);
+      console.error(`[data] preserved corrupt file → ${aside}`);
+    }
+  } catch { /* best effort */ }
+}
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public'), { index: false }));
@@ -331,7 +389,8 @@ const DEFAULT_CONFIG = {
   metricsMaxHistory: 1440,  // max entries in memory (1440 × 60s = 24h)
   dockerCleanupInterval: 0, // days between auto Docker cleanup (0 = disabled)
   lastDockerCleanup: null,
-  autoBackupInterval: 0,   // days between automatic backups (0 = disabled)
+  autoBackupInterval: 7,   // days between automatic backups (0 = disabled) — semanal
+  safetyFlushHours: 24,    // force-write history+metrics to disk every N hours (0 = disabled)
   smtp: {
     enabled: false,
     method: 'smtp',          // smtp | direct | gmail | outlook | yahoo | icloud
@@ -347,44 +406,107 @@ const DEFAULT_CONFIG = {
   }
 };
 
+let _configRecoveryDone = false;
 function loadConfig() {
   if (!fs.existsSync(CONFIG_FILE)) {
-    fs.writeFileSync(CONFIG_FILE, JSON.stringify(DEFAULT_CONFIG, null, 2));
+    atomicWriteFileSync(CONFIG_FILE, JSON.stringify(DEFAULT_CONFIG, null, 2));
     return { ...DEFAULT_CONFIG };
   }
+  let source = null;
   try {
-    const raw = { ...DEFAULT_CONFIG, ...JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8')) };
-    // Decrypt password in memory — never expose encrypted blob outside server
-    if (raw.smtp && raw.smtp.pass && raw.smtp.pass !== '') {
-      raw.smtp.pass = decrypt(raw.smtp.pass);
+    const txt = fs.readFileSync(CONFIG_FILE, 'utf8');
+    if (!txt.trim()) throw new Error('config.json is empty');
+    source = JSON.parse(txt);
+  } catch (e) {
+    // File exists but is unreadable (e.g. truncated to 0 bytes by a power loss).
+    // Try to recover from a backup before falling back to defaults, and never
+    // overwrite the corrupt file with defaults — preserve it for inspection.
+    if (!_configRecoveryDone) {
+      _configRecoveryDone = true;
+      console.error(`[data] config.json unreadable (${e.message}); attempting recovery`);
+      preserveCorrupt(CONFIG_FILE);
+      const rec = recoverFromBackup('config.json');
+      if (rec) {
+        console.error(`[data] recovered config.json from backup ${rec.from}`);
+        try { atomicWriteFileSync(CONFIG_FILE, JSON.stringify(rec.data, null, 2)); } catch {}
+        source = rec.data;
+      } else {
+        console.error('[data] no backup for config.json; using defaults (NOT overwriting corrupt file)');
+      }
     }
-    return raw;
+    if (!source) return { ...DEFAULT_CONFIG };
   }
-  catch { return { ...DEFAULT_CONFIG }; }
+  const raw = { ...DEFAULT_CONFIG, ...source };
+  // Decrypt password in memory — never expose encrypted blob outside server
+  if (raw.smtp && raw.smtp.pass && raw.smtp.pass !== '') {
+    try { raw.smtp.pass = decrypt(raw.smtp.pass); } catch {}
+  }
+  return raw;
 }
 function saveConfig(c) {
   const toSave = { ...c };
   if (toSave.smtp && toSave.smtp.pass) {
     toSave.smtp = { ...toSave.smtp, pass: encrypt(toSave.smtp.pass) };
   }
-  fs.writeFileSync(CONFIG_FILE, JSON.stringify(toSave, null, 2));
+  atomicWriteFileSync(CONFIG_FILE, JSON.stringify(toSave, null, 2));
 }
 
 // ─── Sites ────────────────────────────────────────────────────────
+let _lastGoodSites = null;       // last successfully parsed sites (in-memory safety net)
+let _sitesRecoveryDone = false;
 function loadSites() {
   if (!fs.existsSync(SITES_FILE)) {
     const defaults = { sites: [{ id: '1', name: 'Example', url: 'https://example.com', timeout: 10000, tags: [], paused: false }] };
-    fs.writeFileSync(SITES_FILE, JSON.stringify(defaults, null, 2));
+    atomicWriteFileSync(SITES_FILE, JSON.stringify(defaults, null, 2));
+    _lastGoodSites = defaults;
     return defaults;
   }
-  return JSON.parse(fs.readFileSync(SITES_FILE, 'utf8'));
+  try {
+    const txt = fs.readFileSync(SITES_FILE, 'utf8');
+    if (!txt.trim()) throw new Error('sites.json is empty');
+    const parsed = JSON.parse(txt);
+    if (!parsed || !Array.isArray(parsed.sites)) throw new Error('sites.json malformed');
+    _lastGoodSites = parsed;
+    return parsed;
+  } catch (e) {
+    // Corrupt/empty after a crash. Recover from backup if possible; otherwise
+    // fall back to last-good (or empty) WITHOUT overwriting the corrupt file,
+    // so manual recovery stays possible. Only run recovery once to avoid spam.
+    if (!_sitesRecoveryDone) {
+      _sitesRecoveryDone = true;
+      console.error(`[data] sites.json unreadable (${e.message}); attempting recovery`);
+      preserveCorrupt(SITES_FILE);
+      const rec = recoverFromBackup('sites.json');
+      if (rec && rec.data && Array.isArray(rec.data.sites)) {
+        console.error(`[data] recovered sites.json from backup ${rec.from} (${rec.data.sites.length} sites)`);
+        try { atomicWriteFileSync(SITES_FILE, JSON.stringify(rec.data, null, 2)); } catch {}
+        _lastGoodSites = rec.data;
+        return rec.data;
+      }
+      console.error('[data] no backup for sites.json; serving empty list (NOT overwriting corrupt file)');
+    }
+    return _lastGoodSites || { sites: [] };
+  }
 }
-function saveSites(s) { fs.writeFileSync(SITES_FILE, JSON.stringify(s, null, 2)); }
+function saveSites(s) { atomicWriteFileSync(SITES_FILE, JSON.stringify(s, null, 2)); }
 
 // ─── History ──────────────────────────────────────────────────────
 function loadHistory() {
   if (!fs.existsSync(HISTORY_FILE)) return {};
-  try { return JSON.parse(fs.readFileSync(HISTORY_FILE, 'utf8')); } catch { return {}; }
+  try {
+    const txt = fs.readFileSync(HISTORY_FILE, 'utf8');
+    if (!txt.trim()) throw new Error('history.json is empty');
+    return JSON.parse(txt);
+  } catch (e) {
+    console.error(`[data] history.json unreadable (${e.message}); attempting recovery`);
+    preserveCorrupt(HISTORY_FILE);
+    const rec = recoverFromBackup('history.json');
+    if (rec && rec.data && typeof rec.data === 'object') {
+      console.error(`[data] recovered history.json from backup ${rec.from}`);
+      return rec.data;
+    }
+    return {};
+  }
 }
 // ─── Smart history writes ─────────────────────────────────────────
 let _historyDirty = false;
@@ -401,7 +523,7 @@ function shouldRecordEntry(siteId, entry) {
   return change > 0.10;                            // >10% variation
 }
 
-function saveHistory(h) { fs.writeFileSync(HISTORY_FILE, JSON.stringify(h)); }
+function saveHistory(h) { atomicWriteFileSync(HISTORY_FILE, JSON.stringify(h)); }
 
 function markHistoryDirty() {
   _historyDirty = true;
@@ -1001,7 +1123,20 @@ try { metricsReader = require('./metrics/reader'); } catch {}
 
 function loadMetricsHistory() {
   if (!fs.existsSync(METRICS_FILE)) return [];
-  try { return JSON.parse(fs.readFileSync(METRICS_FILE, 'utf8')); } catch { return []; }
+  try {
+    const txt = fs.readFileSync(METRICS_FILE, 'utf8');
+    if (!txt.trim()) throw new Error('metrics.json is empty');
+    return JSON.parse(txt);
+  } catch (e) {
+    console.error(`[data] metrics.json unreadable (${e.message}); attempting recovery`);
+    preserveCorrupt(METRICS_FILE);
+    const rec = recoverFromBackup('metrics.json');
+    if (rec && Array.isArray(rec.data)) {
+      console.error(`[data] recovered metrics.json from backup ${rec.from}`);
+      return rec.data;
+    }
+    return [];
+  }
 }
 
 let metricsHistory = loadMetricsHistory();
@@ -1052,6 +1187,27 @@ function scheduleAutoBackup() {
     } catch(e) { console.warn('Auto backup failed:', e.message); }
   }, ms);
   console.log(`Auto backup interval: ${days}d`);
+}
+
+// ─── Safety flush scheduler ───────────────────────────────────────
+// History/metrics live in memory and (depending on historyFlushMode) may only
+// be persisted on graceful shutdown. A power loss never reaches that path, so
+// this periodically force-writes them to disk to bound how much can be lost.
+let _safetyFlushTimer = null;
+function scheduleSafetyFlush() {
+  if (_safetyFlushTimer) { clearInterval(_safetyFlushTimer); _safetyFlushTimer = null; }
+  const cfg = loadConfig();
+  const hours = cfg.safetyFlushHours || 0;
+  if (hours <= 0) return;
+  const ms = hours * 3600 * 1000;
+  _safetyFlushTimer = setInterval(() => {
+    try {
+      flushHistoryNow();
+      if (metricsHistory.length > 0) atomicWriteFileSync(METRICS_FILE, JSON.stringify(metricsHistory));
+      console.log(`Safety flush: history + ${metricsHistory.length} metrics written to disk`);
+    } catch(e) { console.warn('Safety flush failed:', e.message); }
+  }, ms);
+  console.log(`Safety flush interval: ${hours}h`);
 }
 
 // ─── State ────────────────────────────────────────────────────────
@@ -1169,6 +1325,7 @@ app.put('/api/config', (req, res) => {
   if (req.body.nasRefreshInterval !== undefined && req.body.nasRefreshInterval !== current.nasRefreshInterval) scheduleNasRefresh();
   if (req.body.metricsInterval !== undefined && req.body.metricsInterval !== current.metricsInterval) scheduleMetrics();
   if (req.body.autoBackupInterval !== undefined && req.body.autoBackupInterval !== current.autoBackupInterval) scheduleAutoBackup();
+  if (req.body.safetyFlushHours !== undefined && req.body.safetyFlushHours !== current.safetyFlushHours) scheduleSafetyFlush();
   // Re-init network if network config changed
   if (req.body.network !== undefined) {
     const wasEnabled = current.network?.enabled;
@@ -2376,7 +2533,7 @@ function shutdownFlush() {
   flushHistoryNow();
   // Flush metrics history to disk
   if (metricsHistory.length > 0) {
-    try { fs.writeFileSync(METRICS_FILE, JSON.stringify(metricsHistory)); } catch {}
+    try { atomicWriteFileSync(METRICS_FILE, JSON.stringify(metricsHistory)); } catch {}
   }
   // Always save peers on shutdown regardless of peersMemoryOnly
   try { netPeers.savePeers(); } catch {}
@@ -2399,4 +2556,5 @@ app.listen(PORT, () => {
   scheduleNasRefresh();
   scheduleMetrics();
   scheduleAutoBackup();
+  scheduleSafetyFlush();
 });

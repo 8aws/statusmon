@@ -5,6 +5,21 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 
 ---
 
+## [5.7.0] — 2026-06-15
+
+### Added
+- **Escritura crash-safe (`atomicWriteFileSync`)** — `config.json`, `sites.json`, `history.json` y `metrics.json` se escriben ahora a un archivo temporal + `fsync` + `rename` atómico + `fsync` del directorio. Un corte de luz ya no puede dejar un `.json` a medias o a 0 bytes.
+- **Recuperación automática al arranque** — si un archivo de datos aparece vacío o corrupto, se preserva como `.corrupt-<ts>` (nunca se sobrescribe con defaults) y se intenta restaurar desde el backup más reciente válido. Aplica a config, sites, history y metrics.
+- **Volcado de seguridad periódico (`safetyFlushHours`, por defecto 24h)** — fuerza la escritura de historial y métricas a disco cada N horas, independientemente de `historyFlushMode`, para acotar la pérdida ante un fallo de energía.
+- **`BACKUPS_DIR` configurable** — permite ubicar los backups en un volumen separado de `/data` (por defecto `/backups` en Docker) para que una pérdida del volumen de datos no se lleve también las copias.
+
+### Changed
+- **Backup automático activado por defecto** — `autoBackupInterval` pasa de `0` (desactivado) a `7` días (semanal).
+- **Dockerfile sin `VOLUME ["/data"]`** — evita que Docker cree volúmenes anónimos huérfanos al recrear el contenedor (causa de pérdida total de datos). La persistencia se controla siempre con bind-mounts explícitos del host.
+- **docker-compose** — bind-mount de datos obligatorio + bind-mount separado para backups (`/backups`), documentado para Docker genérico y ZimaOS.
+
+---
+
 ## [5.6.16] — 2026-06-09
 
 ### Fixed
