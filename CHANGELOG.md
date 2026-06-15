@@ -5,6 +5,16 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 
 ---
 
+## [5.7.1] — 2026-06-15
+
+### Added
+- **Control de “Volcado de seguridad” en la UI** — la opción `safetyFlushHours` (introducida en 5.7.0, solo accesible vía `config.json`) ahora tiene campo en Ajustes → General → Almacenamiento, junto a “Guardar historial”. Permite ajustar cada cuántas horas se fuerza la escritura de historial y métricas a disco sin editar archivos.
+
+### Fixed
+- **Etiquetas obsoletas de backups** — la UI mostraba “Backups en /data/backups” y el actualizador mencionaba `/data/backups/`, rutas que cambiaron al separar los backups con `BACKUPS_DIR` (`/backups`). Textos corregidos para no inducir a error.
+
+---
+
 ## [5.7.0] — 2026-06-15
 
 ### Added

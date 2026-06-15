@@ -728,6 +728,13 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
           </select>
         </div>
         <div class="setting-row">
+          <label for="cfg-safety-flush"><div class="setting-label">Volcado de seguridad</div><div class="setting-sub">Fuerza escritura de historial y métricas cada N horas (0 = desactivado)</div></label>
+          <div style="display:flex;align-items:center;gap:4px">
+            <input class="setting-input" type="number" id="cfg-safety-flush" value="24" min="0" max="168" style="width:80px">
+            <span class="setting-unit">horas</span>
+          </div>
+        </div>
+        <div class="setting-row">
           <div><div class="setting-label">Peers solo en memoria</div><div class="setting-sub">peers.json se guarda solo al apagar</div></div>
           <label class="toggle"><input type="checkbox" id="cfg-peers-memory"><span class="toggle-slider"></span></label>
         </div>
@@ -959,7 +966,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
       </div>
 
       <div class="settings-section">
-        <div class="settings-section-title">Backups en /data/backups</div>
+        <div class="settings-section-title">Backups</div>
         <div id="backups-list">Cargando…</div>
         <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
           <button class="settings-save" onclick="clearAllBackups()" style="background:var(--faint);border:1px solid var(--border2);color:var(--muted)">Eliminar todos</button>
@@ -1281,7 +1288,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
       El proceso realizará estos pasos <em>en ese orden</em>:
     </p>
     <ol style="font-size:12px;color:var(--muted);line-height:1.9;margin:0 0 16px 18px;padding:0">
-      <li>Backup automático de <code>/data</code> en <code>/data/backups/</code></li>
+      <li>Backup automático de <code>/data</code> en la carpeta de backups (<code>BACKUPS_DIR</code>, por defecto <code>/backups</code>)</li>
       <li>Sobrescritura de <code>src/</code> y <code>public/</code> con los archivos del ZIP</li>
       <li><strong style="color:var(--down)">El servidor se detiene</strong> (<code>process.exit(0)</code>)</li>
       <li>Docker lo relanza automáticamente (<code>restart: unless-stopped</code>)</li>
@@ -1376,6 +1383,7 @@ async function openSettings(){
   document.getElementById('cfg-maxhistory').value=serverCfg.maxHistory||500;
   document.getElementById('cfg-timeout').value=serverCfg.defaultTimeout||10000;
   document.getElementById('cfg-history-flush').value=serverCfg.historyFlushMode||'shutdown';
+  document.getElementById('cfg-safety-flush').value=serverCfg.safetyFlushHours??24;
   document.getElementById('cfg-peers-memory').checked=serverCfg.peersMemoryOnly!==false;
   document.getElementById('cfg-nas-interval').value=serverCfg.nasRefreshInterval||30;
   document.getElementById('cfg-maint').checked=serverCfg.maintenanceMode||false;
@@ -1713,6 +1721,7 @@ async function saveSettings(){
     maxHistory:parseInt(document.getElementById('cfg-maxhistory').value)||500,
     defaultTimeout:parseInt(document.getElementById('cfg-timeout').value)||10000,
     historyFlushMode:document.getElementById('cfg-history-flush').value,
+    safetyFlushHours:parseInt(document.getElementById('cfg-safety-flush').value)||0,
     peersMemoryOnly:document.getElementById('cfg-peers-memory').checked,
     nasRefreshInterval:parseInt(document.getElementById('cfg-nas-interval').value)||30,
     maintenanceMode:document.getElementById('cfg-maint').checked,
