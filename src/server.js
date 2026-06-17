@@ -64,7 +64,7 @@ function buildZipBuffer(entries) {
 // ──────────────────────────────────────────────────────────────────
 const nodemailer = require('nodemailer');
 
-const APP_VERSION = '5.7.1';
+const APP_VERSION = '5.7.2';
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const netCrypto = require('./network/crypto');
@@ -363,10 +363,9 @@ app.use((req, res, next) => {
 const DEFAULT_CONFIG = {
   checkInterval: 60,       // seconds
   maxHistory: 10080,  // 7 días a 1 check/min
-  defaultTimeout: 10000,
+  defaultTimeout: 10000,   // ms — timeout por defecto de cada check
   maintenanceMode: false,  // silences all alerts globally
   alertAfterChecks: 2,     // notify after X consecutive failed checks
-  defaultTimeout: 10,      // seconds — default request timeout per check
   nasRefreshInterval: 30,  // seconds between NAS stats cache refresh
   historyFlushMode: 'shutdown', // 'shutdown' | '5min' | '30min' | 'everycheck'
   peersMemoryOnly: true,        // peers.json only written on shutdown
@@ -626,7 +625,7 @@ function checkTcp(site) {
     const url = new URL(site.url); // tcp://hostname:port
     const host = url.hostname;
     const port = parseInt(url.port) || 80;
-    const timeout = site.timeout || (loadConfig().defaultTimeout||10)*1000;
+    const timeout = site.timeout || loadConfig().defaultTimeout || 10000;
     const start = Date.now();
     const socket = new net.Socket();
     socket.setTimeout(timeout);
@@ -651,7 +650,7 @@ function checkSslSite(site) {
     const url = new URL(site.url); // ssl://hostname or ssl://hostname:port
     const host = url.hostname;
     const port = parseInt(url.port) || 443;
-    const timeout = site.timeout || (loadConfig().defaultTimeout||10)*1000;
+    const timeout = site.timeout || loadConfig().defaultTimeout || 10000;
     const start = Date.now();
     try {
       const socket = tls.connect({ host, port, servername: host, rejectUnauthorized: false, timeout }, () => {
@@ -732,7 +731,7 @@ function checkHeartbeat(site) {
 function checkHttp(site) {
   return new Promise(async (resolve) => {
     const start = Date.now();
-    const timeout = site.timeout || (loadConfig().defaultTimeout || 10) * 1000;
+    const timeout = site.timeout || loadConfig().defaultTimeout || 10000;
     let firstUrl;
     try { firstUrl = new URL(site.url); } catch(e) { return resolve({ up: false, responseTime: 0, ttfb: null, statusCode: null, error: 'URL inválida', bodySize: null, stack: null, ssl: null, checkType: 'http', redirects: null }); }
     const sslPromise = firstUrl.protocol === 'https:' ? getSSLExpiry(firstUrl.hostname, firstUrl.port || 443) : Promise.resolve(null);
@@ -774,14 +773,20 @@ function checkHttp(site) {
     try {
       const { res, url: finalUrl, hopStart } = await doHop(site.url, 0);
       let bodyLen = 0, bodyText = '';
-      await new Promise(done => {
-        res.on('data', chunk => {
-          bodyLen += chunk.length;
-          if (needsBody && bodyText.length < 200000) bodyText += chunk.toString('utf8', 0, Math.min(chunk.length, 200000 - bodyText.length));
+      if (needsBody) {
+        await new Promise(done => {
+          res.on('data', chunk => {
+            bodyLen += chunk.length;
+            if (bodyText.length < 200000) bodyText += chunk.toString('utf8', 0, Math.min(chunk.length, 200000 - bodyText.length));
+          });
+          res.on('end', done);
+          res.on('error', done);
         });
-        res.on('end', done);
-        res.on('error', done);
-      });
+      } else {
+        // Uptime check: el status code de las cabeceras basta — no descargamos
+        // el cuerpo (evita transferir MB inútiles y atascos a mitad de stream).
+        res.destroy();
+      }
       const totalTime = Date.now() - start;
       const httpOk = res.statusCode < 400;
       let up = httpOk, error = null;
@@ -816,6 +821,32 @@ function checkSite(site) {
     if (proto === 'heartbeat:') return Promise.resolve(checkHeartbeat(site));
   } catch {}
   return checkHttp(site);
+}
+
+// Check + reintento ante microcorte + fallback de protocolo (http<->https).
+// Compartido por el scheduler y la comprobación manual para un veredicto único.
+async function checkSiteResilient(site) {
+  let result = await checkSite(site);
+  // Reintento inmediato ante fallo para descartar microcortes
+  if (!result.up && site.type !== 'heartbeat') {
+    await new Promise(r => setTimeout(r, 2000));
+    result = await checkSite(site);
+  }
+  // Fallback de protocolo: si sigue caído en una URL http/https, prueba el
+  // esquema opuesto. Si el otro responde, lo consideramos "arriba" pero
+  // avisamos de que la URL configurada usa el protocolo erróneo.
+  if (!result.up && (site.type === 'http' || !site.type)) {
+    const m = /^(https?):\/\/(.*)$/i.exec(site.url || '');
+    if (m) {
+      const curScheme = m[1].toLowerCase();
+      const altScheme = curScheme === 'https' ? 'http' : 'https';
+      const alt = await checkHttp({ ...site, url: `${altScheme}://${m[2]}` });
+      if (alt.up) {
+        result = { ...alt, protocolWarning: `Responde en ${altScheme.toUpperCase()} pero no en ${curScheme.toUpperCase()} (${result.statusCode ? 'HTTP '+result.statusCode : result.error || 'sin respuesta'}). Cambia la URL a ${altScheme}://` };
+      }
+    }
+  }
+  return result;
 }
 
 // ─── Notifications ────────────────────────────────────────────────
@@ -938,6 +969,7 @@ const alertState = {}; // { siteId: { consecutive: 0, notified: false, wasDown: 
 async function handleAlerts(site, result) {
   const cfg = loadConfig();
   if (cfg.maintenanceMode) return;
+  if (site.maintenance) return;          // mantenimiento general del sitio (indefinido)
   if (inMaintenanceWindow(site)) return; // per-site maintenance window
   if (!alertState[site.id]) alertState[site.id] = { consecutive: 0, notified: false, wasDown: false, sslWarnSent: false, sslCriticalSent: false };
   const a = alertState[site.id];
@@ -1267,12 +1299,7 @@ async function runChecks() {
     const siteMs = ((site.checkInterval || cfg.checkInterval || 60)) * 1000;
     if (now - (_lastCheckedAt[site.id] || 0) < siteMs) continue;
     _lastCheckedAt[site.id] = now;
-    let result = await checkSite(site);
-    // Reintento inmediato ante fallo para descartar microcortes
-    if (!result.up && site.type !== 'heartbeat') {
-      await new Promise(r => setTimeout(r, 2000));
-      result = await checkSite(site);
-    }
+    let result = await checkSiteResilient(site);
     const ts = Date.now();
     if (!history[site.id]) history[site.id] = [];
     const entry = { ts, up: result.up, responseTime: result.responseTime, ttfb: result.ttfb, statusCode: result.statusCode, error: result.error, bodySize: result.bodySize, stack: result.stack, ssl: result.ssl, redirects: result.redirects || null };
@@ -1284,7 +1311,7 @@ async function runChecks() {
       markHistoryDirty();
     }
     const anomaly = detectAnomaly(history[site.id]);
-    status[site.id] = { ...result, lastCheck: ts, name: site.name, url: site.url, id: site.id, paused: false, degraded: !!anomaly, anomaly };
+    status[site.id] = { ...result, lastCheck: ts, name: site.name, url: site.url, id: site.id, paused: false, maintenance: !!site.maintenance, degraded: !!anomaly, anomaly };
     await handleAlerts(site, result);
     // Auto-diagnose on first down detection
     if (!result.up && (!diagCache[site.id] || diagCache[site.id].ts < Date.now() - 300000)) {
@@ -1356,6 +1383,7 @@ app.get('/api/status/public', (req, res) => {
     pub[id] = {
       up: s.up, name: s.name, url: s.url, lastCheck: s.lastCheck,
       statusCode: s.statusCode, tags: site.tags || [],
+      maintenance: !!site.maintenance,
       uptimePct: st?.uptime24h ?? st?.uptimePct ?? null,
       meanResponseTime: st?.mean ?? null,
       lastOutage: st?.currentOutageStreak > 0 ? s.lastCheck : null,
@@ -1409,6 +1437,25 @@ app.post('/api/sites/:id/pause', (req, res) => {
   res.json({ ok: true, paused: site.paused });
 });
 
+// Mantenimiento general del sitio (silencia alertas indefinidamente, p.ej. un
+// contenedor parado) sin dejar de comprobar el estado. Se desactiva manualmente.
+app.post('/api/sites/:id/maintenance', (req, res) => {
+  const data = loadSites();
+  const site = data.sites.find(s => s.id === req.params.id);
+  if (!site) return res.status(404).json({ error: 'Not found' });
+  site.maintenance = !site.maintenance;
+  saveSites(data);
+  if (status[site.id]) status[site.id].maintenance = site.maintenance;
+  // Al activar mantenimiento, resetea el estado de alerta para no disparar
+  // "recuperado" al desactivarlo más tarde.
+  if (site.maintenance && alertState[site.id]) {
+    alertState[site.id].consecutive = 0;
+    alertState[site.id].notified = false;
+    alertState[site.id].wasDown = false;
+  }
+  res.json({ ok: true, maintenance: site.maintenance });
+});
+
 // History
 app.get('/api/history/:id', (req, res) => {
   let h = history[req.params.id] || [];
@@ -1450,9 +1497,9 @@ app.post('/api/check/:id', async (req, res) => {
   const { sites } = loadSites();
   const site = sites.find(s => s.id === req.params.id);
   if (!site) return res.status(404).json({ error: 'Not found' });
-  const result = await checkSite(site);
+  const result = await checkSiteResilient(site);
   const ts = Date.now();
-  status[site.id] = { ...result, lastCheck: ts, name: site.name, url: site.url, id: site.id };
+  status[site.id] = { ...result, lastCheck: ts, name: site.name, url: site.url, id: site.id, maintenance: !!site.maintenance };
   if (!history[site.id]) history[site.id] = [];
   history[site.id].push({ ts, up: result.up, responseTime: result.responseTime, ttfb: result.ttfb, statusCode: result.statusCode, error: result.error, bodySize: result.bodySize, stack: result.stack, ssl: result.ssl });
   const maxH = loadConfig().maxHistory || 500;

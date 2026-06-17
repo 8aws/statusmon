@@ -5,6 +5,20 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 
 ---
 
+## [5.7.2] — 2026-06-17
+
+### Added
+- **Fallback de protocolo http↔https con aviso** — si un check http/https falla, se reintenta automáticamente con el esquema opuesto. Si el otro responde, el sitio se considera operativo y se avisa al usuario (badge ⚠ en la lista y mensaje en el detalle) de que la URL configurada usa el protocolo equivocado, con la corrección sugerida.
+- **Mantenimiento general por sitio** — además de las ventanas programadas, cada sitio tiene un interruptor de mantenimiento indefinido (botón 🔧 en la fila y casilla en el editor) que silencia sus alertas hasta desactivarlo (p.ej. un contenedor parado), sin dejar de comprobar el estado. Se refleja en la página pública como mantenimiento, no como caída.
+
+### Changed
+- **Check de uptime más ligero** — ya no se descarga el cuerpo de la respuesta cuando no hay comprobación de contenido configurada; basta el código de estado de las cabeceras. Evita transferir MB inútiles y atascos a mitad de stream que provocaban falsos "caído".
+
+### Fixed
+- **Timeout por defecto roto en sitios nuevos** — había una clave `defaultTimeout` duplicada en la config (`10000` y `10`) y un uso inconsistente (ms vs segundos×1000). Un sitio creado sin timeout explícito quedaba con 10 ms y daba "caído" siempre. Unificado a milisegundos en toda la base de código.
+
+---
+
 ## [5.7.1] — 2026-06-15
 
 ### Added

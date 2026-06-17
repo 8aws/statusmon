@@ -1266,6 +1266,11 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
     </div>
     <!-- Maintenance tab -->
     <div id="etab-maint" class="tab-panel">
+      <div class="setting-row" style="margin-bottom:14px">
+        <label for="e-maint-general"><div class="setting-label">🔧 Mantenimiento general</div><div class="setting-sub">Silencia las alertas de este sitio indefinidamente (p.ej. contenedor parado) hasta que lo desactives. El sitio se sigue comprobando.</div></label>
+        <label class="toggle"><input type="checkbox" id="e-maint-general"><span class="toggle-slider"></span></label>
+      </div>
+      <div class="settings-section-title" style="margin-bottom:6px">Ventanas programadas</div>
       <div class="setting-sub" style="margin-bottom:12px">Define ventanas de mantenimiento programado. Las alertas se silencian durante estos periodos.</div>
       <div id="e-maint-list" style="margin-bottom:12px"></div>
       <button class="btn btn-sm" onclick="addMaintWindow()" style="width:100%">+ Añadir ventana</button>
@@ -2073,6 +2078,7 @@ async function checkNow(id,e){e.stopPropagation();await apiFetch(`/api/check/${i
 async function checkNowDetail(){if(!currentId)return;await apiFetch(`/api/check/${currentId}`,{method:'POST'});await fetchSiteData(currentId);renderDetail();}
 async function togglePause(id,e){e.stopPropagation();await apiFetch(`/api/sites/${id}/pause`,{method:'POST'});await fetchAll();}
 async function togglePauseDetail(){if(!currentId)return;await apiFetch(`/api/sites/${currentId}/pause`,{method:'POST'});await fetchAll();renderDetail();}
+async function toggleMaintenance(id,e){e.stopPropagation();await apiFetch(`/api/sites/${id}/maintenance`,{method:'POST'});await fetchAll();}
 async function togglePublic(id,e){
   e.stopPropagation();
   const site=sites.find(s=>s.id===id);if(!site)return;
@@ -2317,6 +2323,10 @@ function renderSiteRow(site){
   const tags=(stack?.clues||[]).slice(0,2).map(c=>`<span class="tag">${c}</span>`).join('');
   const siteTags=(site.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('');
   const pausedTag=isPaused?'<span class="tag paused-tag">⏸ Pausado</span>':'';
+  const isMaint=site.maintenance||s?.maintenance;
+  const maintTag=isMaint?'<span class="tag" style="border-color:rgba(245,166,35,.5);color:var(--warn)">🔧 Mantenimiento</span>':'';
+  const protoWarn=s?.protocolWarning;
+  const protoTag=protoWarn?`<span class="tag" style="border-color:rgba(245,166,35,.5);color:var(--warn)" title="${protoWarn.replace(/"/g,'&quot;')}">⚠ Protocolo</span>`:'';
   const privateTag=isPrivate?'<span class="tag" style="border-color:rgba(122,125,158,.4);color:var(--muted)">🔒 Oculto</span>':'';
   // Trend
   const trend=st?.trend||'stable';
@@ -2340,7 +2350,7 @@ function renderSiteRow(site){
         <span class="trend-arrow ${trend}" title="Tendencia: ${trendTitle}">${trendArrow}</span>
       </div>
       <div class="url">${site.url}</div>
-      <div class="tags">${pausedTag}${privateTag}${sslTag(ssl)}${siteTags}${tags}</div>
+      <div class="tags">${pausedTag}${maintTag}${protoTag}${privateTag}${sslTag(ssl)}${siteTags}${tags}</div>
     </div>
     <div class="sparkline-wrap">
       ${sparkline(historyMap[site.id]||[])}
@@ -2352,6 +2362,7 @@ function renderSiteRow(site){
     <div class="row-actions" onclick="event.stopPropagation()">
       <button class="icon-btn" onclick="editSite('${site.id}',event)" title="Editar sitio">✎</button>
       <button class="icon-btn ${isPaused?'pause-active':''}" onclick="togglePause('${site.id}',event)" title="${isPaused?'Reanudar':'Pausar'}">${isPaused?'▶':'⏸'}</button>
+      <button class="icon-btn ${isMaint?'pause-active':''}" onclick="toggleMaintenance('${site.id}',event)" title="${isMaint?'Quitar mantenimiento (reactivar alertas)':'Mantenimiento general (silenciar alertas)'}">🔧</button>
       <button class="icon-btn" onclick="checkNow('${site.id}',event)" title="Comprobar ahora">↺</button>
       <button class="icon-btn ${isPrivate?'pause-active':''}" onclick="togglePublic('${site.id}',event)" title="${isPrivate?'Privado — solo admin':'Público — visible en /status'}">${isPrivate?'🔒':'👁'}</button>
       <button class="icon-btn del" onclick="deleteSite('${site.id}',event)" title="Eliminar">✕</button>
@@ -2392,6 +2403,7 @@ function editSite(id,e){
   document.getElementById('e-cc-text').value=cc.text||'';
   document.getElementById('e-cc-fields').style.display=cc.enabled?'block':'none';
   // Maintenance tab
+  document.getElementById('e-maint-general').checked=!!site.maintenance;
   renderMaintWindows();
   // Botón copiar URL ping para heartbeat
   const hbRow = document.getElementById('e-heartbeat-ping-row');
@@ -2504,6 +2516,7 @@ async function saveEditSite(){
       chatId:document.getElementById('e-wh-tg-chatid').value.trim(),
     },
     maintenanceWindows:_editMaintWindows,
+    maintenance:document.getElementById('e-maint-general').checked,
     contentCheck:{
       enabled:document.getElementById('e-cc-enabled').checked,
       text:document.getElementById('e-cc-text').value.trim(),
@@ -2552,10 +2565,12 @@ function renderDetail(){
 
   const dot=document.getElementById('d-dot');
   const isDeg=s?.up&&s?.degraded;
-  dot.className='dot '+(isPaused?'paused':isDeg?'degraded':s?.up?'up':s?.up===false?'down':'');
-  document.getElementById('d-statusText').textContent=isPaused?'Pausado':isDeg?'Degradado':s?.up?'Operativo':s?.up===false?'CAÍDO':'–';
-  document.getElementById('d-statusText').style.color=isPaused?'var(--muted)':isDeg?'var(--warn)':s?.up?'var(--up)':s?.up===false?'var(--down)':'var(--muted)';
-  document.getElementById('d-code').textContent=s?.statusCode?`HTTP ${s.statusCode}`:s?.error||'';
+  const isMaint=site.maintenance||s?.maintenance;
+  dot.className='dot '+(isPaused?'paused':isMaint?'degraded':isDeg?'degraded':s?.up?'up':s?.up===false?'down':'');
+  document.getElementById('d-statusText').textContent=isPaused?'Pausado':isMaint?'🔧 Mantenimiento':isDeg?'Degradado':s?.up?'Operativo':s?.up===false?'CAÍDO':'–';
+  document.getElementById('d-statusText').style.color=isPaused?'var(--muted)':isMaint?'var(--warn)':isDeg?'var(--warn)':s?.up?'var(--up)':s?.up===false?'var(--down)':'var(--muted)';
+  document.getElementById('d-code').textContent=s?.protocolWarning?`⚠ ${s.protocolWarning}`:s?.statusCode?`HTTP ${s.statusCode}`:s?.error||'';
+  document.getElementById('d-code').style.color=s?.protocolWarning?'var(--warn)':'';
 
   document.getElementById('d-uptimeRow').innerHTML=`
     <div class="sb"><div class="lbl">Uptime 24h</div><div class="val ${uptimeCls(st?.uptime24h)}">${fmtPct(st?.uptime24h)}</div></div>

@@ -307,8 +307,8 @@ async function loadStatus() {
 
 function render(data) {
   const entries = Object.values(data.status || {});
-  const up = entries.filter(s => s.up);
-  const down = entries.filter(s => !s.up);
+  const up = entries.filter(s => s.up && !s.maintenance);
+  const down = entries.filter(s => !s.up && !s.maintenance);   // mantenimiento no cuenta como incidencia
   const times = up.map(s => s.meanResponseTime).filter(Boolean);
   const avgTime = times.length ? Math.round(times.reduce((a,b)=>a+b,0)/times.length) : null;
 
@@ -371,15 +371,17 @@ function render(data) {
   }
 
   // Sort: down first, then by name
+  // Orden: incidencias reales primero, luego mantenimiento, luego operativos
+  const rank = s => s.maintenance ? 1 : (s.up ? 2 : 0);
   const sorted = [...entries].sort((a, b) => {
-    if (!a.up && b.up) return -1;
-    if (a.up && !b.up) return 1;
-    return a.name.localeCompare(b.name);
+    const r = rank(a) - rank(b);
+    return r !== 0 ? r : a.name.localeCompare(b.name);
   });
 
   document.getElementById('servicesList').innerHTML = sorted.map(s => {
-    const cls = s.up ? 'up' : 'down';
-    const dotCls = s.up ? 'up' : 'down';
+    const isMaint = s.maintenance;
+    const cls = isMaint ? 'unknown' : s.up ? 'up' : 'down';
+    const dotCls = cls;
     const tags = (s.tags || []).map(t => `<span class="s-tag">${t}</span>`).join('');
     return `<div class="service-card ${cls}">
       <div class="s-dot ${dotCls}"></div>
@@ -389,7 +391,7 @@ function render(data) {
         ${tags ? `<div class="tags">${tags}</div>` : ''}
       </div>
       <div class="s-metric">
-        <div class="val ${s.up ? '' : 'r'}">${s.up ? 'OK' : 'CAÍDO'}</div>
+        <div class="val ${isMaint ? 'y' : s.up ? '' : 'r'}">${isMaint ? '🔧 Mantenim.' : s.up ? 'OK' : 'CAÍDO'}</div>
         <div class="lbl">${timeAgo(s.lastCheck)}</div>
       </div>
       <div class="s-metric">
