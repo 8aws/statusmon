@@ -64,7 +64,7 @@ function buildZipBuffer(entries) {
 // ──────────────────────────────────────────────────────────────────
 const nodemailer = require('nodemailer');
 
-const APP_VERSION = '5.7.2';
+const APP_VERSION = '5.7.3';
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const netCrypto = require('./network/crypto');
@@ -488,6 +488,26 @@ function loadSites() {
   }
 }
 function saveSites(s) { atomicWriteFileSync(SITES_FILE, JSON.stringify(s, null, 2)); }
+
+// Normaliza la URL introducida por el usuario antes de guardarla, para que un
+// hostname suelto (p.ej. "www.uverse.es") no quede como URL inválida y pueda
+// llegar a tumbar la app al arrancar. Añade esquema si falta y valida.
+// Devuelve la URL normalizada, o null si es irrecuperablemente inválida.
+function normalizeUrl(raw) {
+  if (typeof raw !== 'string') return null;
+  const u = raw.trim();
+  if (!u) return null;
+  // Esquemas especiales de la app (tcp/ssl/dns/heartbeat): preservar tal cual,
+  // cada uno se valida en su propio tipo de check.
+  if (/^(tcp|ssl|dns|heartbeat):/i.test(u)) return u;
+  // http/https explícito: validar que tenga host.
+  if (/^https?:\/\//i.test(u)) {
+    try { return new URL(u).hostname ? u : null; } catch { return null; }
+  }
+  // Sin esquema reconocido → asumir https:// (cubre "www.uverse.es",
+  // "localhost:3000", "1.2.3.4:8080", etc.).
+  try { return new URL('https://' + u).hostname ? 'https://' + u : null; } catch { return null; }
+}
 
 // ─── History ──────────────────────────────────────────────────────
 function loadHistory() {
@@ -1299,6 +1319,7 @@ async function runChecks() {
     const siteMs = ((site.checkInterval || cfg.checkInterval || 60)) * 1000;
     if (now - (_lastCheckedAt[site.id] || 0) < siteMs) continue;
     _lastCheckedAt[site.id] = now;
+    try {
     let result = await checkSiteResilient(site);
     const ts = Date.now();
     if (!history[site.id]) history[site.id] = [];
@@ -1326,6 +1347,10 @@ async function runChecks() {
           diagCache[site.id].networkVerification = v;
         }
       }).catch(() => {});
+    }
+    } catch (e) {
+      // Un sitio problemático nunca debe abortar el resto del ciclo de checks
+      console.error(`[runChecks] error en "${site?.name || site?.id}" (${site?.url}):`, (e && e.message) || e);
     }
   }
   // History saved lazily via markHistoryDirty — only when changed
@@ -1401,8 +1426,9 @@ app.get('/api/status/public', (req, res) => {
 app.get('/api/sites', (req, res) => res.json(loadSites()));
 app.post('/api/sites', (req, res) => {
   const data = loadSites();
-  const { name, url, timeout, tags, webhook } = req.body;
-  if (!name || !url) return res.status(400).json({ error: 'name and url required' });
+  const { name, timeout, tags, webhook } = req.body;
+  const url = normalizeUrl(req.body.url);
+  if (!name || !url) return res.status(400).json({ error: 'Nombre y URL válida obligatorios' });
   const id = String(Date.now());
   const isPublic = req.body.public !== false; // default true
   data.sites.push({ id, name, url, timeout: timeout || loadConfig().defaultTimeout || 10000, tags: tags || [], paused: false, public: isPublic, webhook: webhook || null });
@@ -1413,6 +1439,11 @@ app.put('/api/sites/:id', (req, res) => {
   const data = loadSites();
   const idx = data.sites.findIndex(s => s.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Not found' });
+  if (req.body.url !== undefined) {
+    const nu = normalizeUrl(req.body.url);
+    if (!nu) return res.status(400).json({ error: 'URL inválida' });
+    req.body.url = nu;
+  }
   data.sites[idx] = { ...data.sites[idx], ...req.body };
   saveSites(data);
   res.json({ ok: true });
@@ -2588,6 +2619,16 @@ function shutdownFlush() {
 }
 process.on('SIGTERM', shutdownFlush);
 process.on('SIGINT', shutdownFlush);
+
+// Red de seguridad: un error aislado (p.ej. una URL malformada en un check, un
+// webhook roto) NUNCA debe tumbar el monitor entero ni provocar un bucle de
+// reinicios. Lo registramos y seguimos vivos.
+process.on('uncaughtException', (err) => {
+  console.error('[uncaughtException] error no capturado — la app sigue en marcha:', (err && err.stack) || err);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('[unhandledRejection] promesa rechazada sin manejar — la app sigue en marcha:', (reason && reason.stack) || reason);
+});
 
 app.listen(PORT, () => {
   console.log(`StatusMon v${APP_VERSION} :${PORT}`);

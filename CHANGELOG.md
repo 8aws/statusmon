@@ -5,6 +5,19 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 
 ---
 
+## [5.7.3] — 2026-06-17
+
+### Fixed
+- **Una URL malformada ya no puede tumbar la app** — introducir solo un hostname (p.ej. `www.uverse.es`) sin esquema dejaba una URL inválida que podía crashear el proceso en bucle al arrancar, obligando a editar los archivos a mano. Ahora:
+  - Las URLs se **normalizan y validan al guardar** (POST/PUT): a un hostname suelto se le antepone `https://`; los esquemas especiales (`tcp://`, `ssl://`, `dns://`, `heartbeat:`) se preservan; una URL irrecuperable se rechaza con 400 en vez de guardarse.
+  - El **bucle de comprobaciones** envuelve cada sitio en try/catch: un sitio problemático ya no aborta el ciclo del resto.
+  - **Red de seguridad de proceso** (`uncaughtException`/`unhandledRejection`): cualquier error aislado se registra y la app sigue en marcha, en lugar de caerse.
+
+### Changed
+- **GitHub Actions actualizadas** a sus últimas versiones (checkout v6, docker/* v4–v7, action-gh-release v3), eliminando el aviso de deprecación de Node 20 en el runner.
+
+---
+
 ## [5.7.2] — 2026-06-17
 
 ### Added
