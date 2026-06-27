@@ -12,7 +12,9 @@
 <link rel="apple-touch-icon" href="/icon-180.png">
 <title>StatusMon</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;600&family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css" rel="stylesheet">
 <style>
 /* ── Themes ── */
 :root {
@@ -122,6 +124,8 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
 .sp-bar{flex:1;border-radius:1px;min-height:2px}.sp-bar.up{background:var(--up);opacity:.45}.sp-bar.down{background:var(--down);opacity:.85}
 .row-actions{display:flex;gap:5px}
 .icon-btn{background:transparent;border:1px solid var(--border2);color:var(--muted);width:26px;height:26px;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;transition:.15s;flex-shrink:0}
+.icon-btn .ti{font-size:15px}.btn-icon .ti{font-size:16px}.refresh-btn .ti{font-size:13px}
+.grp-chev .ti{font-size:11px;vertical-align:-1px}
 .icon-btn:hover,.icon-btn:active{border-color:var(--accent);color:var(--accent)}
 .icon-btn.del:hover,.icon-btn.del:active{border-color:var(--down);color:var(--down)}
 .icon-btn.pause-active{border-color:var(--warn);color:var(--warn)}
@@ -448,15 +452,15 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
   </a>
   <div class="header-right">
     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">
-      <button class="refresh-btn" id="refreshBtn" onclick="forceRefresh()" title="Forzar comprobación ahora">↻ <span id="countdown">–</span></button>
+      <button class="refresh-btn" id="refreshBtn" onclick="forceRefresh()" title="Forzar comprobación ahora"><i class="ti ti-refresh"></i> <span id="countdown">–</span></button>
       <span id="lastCheckInfo" style="font-size:9px;color:var(--muted)">–</span>
     </div>
-    <button class="btn-icon" onclick="openSettings()" title="Ajustes">⚙</button>
-    <a class="btn-icon" href="/status" target="_blank" title="Vista pública" style="text-decoration:none;display:flex;align-items:center;justify-content:center">↗</a>
-    <a class="btn-icon" href="/about" title="Acerca de StatusMon" style="text-decoration:none;display:flex;align-items:center;justify-content:center;font-size:12px">?</a>
+    <button class="btn-icon" onclick="openSettings()" title="Ajustes"><i class="ti ti-settings"></i></button>
+    <a class="btn-icon" href="/status" target="_blank" title="Vista pública" style="text-decoration:none;display:flex;align-items:center;justify-content:center"><i class="ti ti-external-link"></i></a>
+    <a class="btn-icon" href="/about" title="Acerca de StatusMon" style="text-decoration:none;display:flex;align-items:center;justify-content:center"><i class="ti ti-help"></i></a>
     <span id="updateBadge" style="display:none;background:var(--warn2);border:1px solid var(--warn);color:var(--warn);padding:3px 9px;border-radius:10px;font-size:10px;font-family:var(--mono);cursor:pointer" onclick="quickUpdate()"></span>
-    <button class="btn-icon" id="logoutBtn" onclick="logout()" title="Cerrar sesión" style="display:none">⏏</button>
-    <button class="btn" onclick="openModal()">+ Añadir</button>
+    <button class="btn-icon" id="logoutBtn" onclick="logout()" title="Cerrar sesión" style="display:none"><i class="ti ti-logout"></i></button>
+    <button class="btn" onclick="openModal()"><i class="ti ti-plus" style="vertical-align:-2px"></i> Añadir</button>
   </div>
 </header>
 
@@ -480,9 +484,9 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
 .cc-drift.na{background:var(--faint);color:var(--muted)}
 </style>
 <div class="sync-bar" id="syncBar" title="Comparación de relojes en tiempo real — revela desfases del reloj del servidor">
-  <div class="clock-cell"><span class="cc-ico">🖥️</span><div class="cc-body"><span class="cc-lbl">servidor</span><span class="cc-time" id="clk-server">--:--:--</span></div><span class="cc-drift na" id="drift-server">—</span></div>
-  <div class="clock-cell" id="cell-browser"><span class="cc-ico">💻</span><div class="cc-body"><span class="cc-lbl">tu navegador</span><span class="cc-time" id="clk-browser">--:--:--</span></div><span class="cc-drift na" id="drift-browser">—</span></div>
-  <div class="clock-cell" id="cell-online"><span class="cc-ico">🌐</span><div class="cc-body"><span class="cc-lbl">referencia online</span><span class="cc-time" id="clk-online">--:--:--</span></div><span class="cc-drift ref" id="drift-online">ref</span></div>
+  <div class="clock-cell"><span class="cc-ico"><i class="ti ti-device-desktop"></i></span><div class="cc-body"><span class="cc-lbl">servidor</span><span class="cc-time" id="clk-server">--:--:--</span></div><span class="cc-drift na" id="drift-server">—</span></div>
+  <div class="clock-cell" id="cell-browser"><span class="cc-ico"><i class="ti ti-device-laptop"></i></span><div class="cc-body"><span class="cc-lbl">tu navegador</span><span class="cc-time" id="clk-browser">--:--:--</span></div><span class="cc-drift na" id="drift-browser">—</span></div>
+  <div class="clock-cell" id="cell-online"><span class="cc-ico"><i class="ti ti-world"></i></span><div class="cc-body"><span class="cc-lbl">referencia online</span><span class="cc-time" id="clk-online">--:--:--</span></div><span class="cc-drift ref" id="drift-online">ref</span></div>
 </div>
 
 <!-- LIST VIEW -->
@@ -498,11 +502,11 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
   <div id="metricsAccordion" style="margin-bottom:16px">
     <div id="met-toggle" class="met-toggle" onclick="toggleMetricsAccordion()">
       <div class="met-toggle-lbl">
-        <span>📊</span>
+        <span><i class="ti ti-chart-bar" style="font-size:14px;vertical-align:-2px"></i></span>
         <span>Métricas del servidor</span>
         <span id="met-toggle-peek" class="met-toggle-peek"></span>
       </div>
-      <span class="met-toggle-icon">▾</span>
+      <span class="met-toggle-icon"><i class="ti ti-chevron-down" style="font-size:13px;vertical-align:-1px"></i></span>
     </div>
     <div id="met-body" class="met-body">
       <div class="met-grid" style="margin-bottom:12px">
@@ -560,7 +564,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
   </div>
   <div class="filter-bar">
     <div class="filter-wrap">
-      <span class="filter-icon">⌕</span>
+      <span class="filter-icon"><i class="ti ti-search" style="font-size:13px"></i></span>
       <input type="search" id="filterInput" class="filter-input" placeholder="Buscar por nombre, URL o etiqueta…" oninput="filterSites()" autocomplete="off">
       <button class="filter-clear" id="filterClear" onclick="clearFilter()" title="Limpiar filtro" style="display:none">✕</button>
     </div>
@@ -2345,7 +2349,7 @@ function renderList(){
     filtered=sortSites(filtered);
     const hasHeader=tag&&allTags.length;
     const collapsed=hasHeader&&collapsedTags.has(tag);
-    if(hasHeader)html+=`<div class="group-header${collapsed?' collapsed':''}" data-tag="${(tag||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;')}" onclick="toggleGroupEl(this)"><span class="grp-chev">▾</span>${tag}<span class="group-count">${filtered.length}</span></div>`;
+    if(hasHeader)html+=`<div class="group-header${collapsed?' collapsed':''}" data-tag="${(tag||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;')}" onclick="toggleGroupEl(this)"><span class="grp-chev"><i class="ti ti-chevron-down"></i></span>${tag}<span class="group-count">${filtered.length}</span></div>`;
     html+=`<div class="group-body${collapsed?' collapsed':''}">`+filtered.map(site=>renderSiteRow(site)).join('')+`</div>`;
   });
   if(!html&&filterQuery)html='<div class="empty"><h3>Sin resultados</h3><p>Prueba con otro término.</p></div>';
@@ -2415,7 +2419,7 @@ function renderSiteRow(site){
   const baselineWarn=ttfb&&st?.meanTtfb&&ttfb>st.meanTtfb*1.5;
   const baselineDot=baselineWarn?`<span class="baseline-dot" title="TTFB actual ${fmt(ttfb)} — ${Math.round((ttfb/st.meanTtfb-1)*100)}% sobre la media (${fmt(st.meanTtfb)})">▲</span>`:'';
   return`<div class="site-row ${cls}${isPrivate?' is-private':''}" data-id="${site.id}" onclick="showDetail('${site.id}')">
-    <div class="drag-handle" draggable="true" onclick="event.stopPropagation()" title="Arrastrar para reordenar">⠿</div>
+    <div class="drag-handle" draggable="true" onclick="event.stopPropagation()" title="Arrastrar para reordenar"><i class="ti ti-grip-vertical"></i></div>
     <div class="row-cb-wrap" onclick="event.stopPropagation()" style="display:none" id="cb-wrap-${site.id}"><input type="checkbox" class="row-cb" id="cb-${site.id}" onchange="onRowCbChange('${site.id}',this.checked)" onclick="event.stopPropagation()"></div>
     <div class="dot ${dotCls}"></div>
     <div class="site-info">
@@ -2436,10 +2440,10 @@ function renderSiteRow(site){
     <div class="col-c"><div class="m-val ${rtCls(ttfb,isUp)}">${ttfb?fmt(ttfb):'–'}${baselineDot}</div><div class="m-lbl">ttfb${baselineWarn?'<span style="color:var(--warn)"> ▲</span>':''}</div></div>
     <div class="col-c"><span class="uptime-pill ${uptimeCls(upPct)}">${fmtPct(upPct)}</span><div class="m-lbl">24h</div></div>
     <div class="row-actions" onclick="event.stopPropagation()">
-      <button class="icon-btn" onclick="editSite('${site.id}',event)" title="Editar (pausar y mantenimiento dentro)">✎</button>
-      <button class="icon-btn" onclick="checkNow('${site.id}',event)" title="Comprobar ahora">↺</button>
-      <button class="icon-btn ${isPrivate?'pause-active':''}" onclick="togglePublic('${site.id}',event)" title="${isPrivate?'Privado — solo admin':'Público — visible en /status'}">${isPrivate?'🔒':'👁'}</button>
-      <button class="icon-btn del" onclick="deleteSite('${site.id}',event)" title="Eliminar">✕</button>
+      <button class="icon-btn" onclick="editSite('${site.id}',event)" title="Editar (pausar y mantenimiento dentro)"><i class="ti ti-pencil"></i></button>
+      <button class="icon-btn" onclick="checkNow('${site.id}',event)" title="Comprobar ahora"><i class="ti ti-refresh"></i></button>
+      <button class="icon-btn ${isPrivate?'pause-active':''}" onclick="togglePublic('${site.id}',event)" title="${isPrivate?'Privado — solo admin':'Público — visible en /status'}"><i class="ti ${isPrivate?'ti-lock':'ti-eye'}"></i></button>
+      <button class="icon-btn del" onclick="deleteSite('${site.id}',event)" title="Eliminar"><i class="ti ti-x"></i></button>
     </div>
   </div>`;
 }

@@ -17,8 +17,10 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
 
-  // Google Fonts — cache-first with network fallback (no external dependency at runtime)
-  if (url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com') {
+  // Google Fonts + webfont de iconos Tabler (jsdelivr) — cache-first con fallback
+  // de red. Tras la primera carga sirven desde caché interna (sin depender del CDN).
+  if (url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com'
+      || (url.hostname === 'cdn.jsdelivr.net' && url.pathname.includes('tabler'))) {
     e.respondWith(
       caches.open(FONTS_CACHE).then(cache =>
         cache.match(e.request).then(cached => {
