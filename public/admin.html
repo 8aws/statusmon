@@ -84,9 +84,16 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
 .stat-sub{font-size:9px;color:var(--muted);margin-top:4px}
 
 /* ── Group headers ── */
-.group-header{display:flex;align-items:center;gap:10px;margin:16px 0 8px;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em}
+.group-header{display:flex;align-items:center;gap:10px;margin:16px 0 8px;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;cursor:pointer;user-select:none;transition:color .15s}
+.group-header:hover{color:var(--text)}
 .group-header::after{content:'';flex:1;height:1px;background:var(--border)}
 .group-count{background:var(--faint);border:1px solid var(--border);padding:1px 7px;border-radius:10px;font-size:9px}
+.grp-chev{font-size:9px;transition:transform .15s;display:inline-block}
+.group-header.collapsed .grp-chev{transform:rotate(-90deg)}
+.group-body.collapsed{display:none}
+.sort-sel{background:var(--s1);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--mono);font-size:12px;padding:7px 9px;cursor:pointer;outline:none;transition:border-color .15s}
+.sort-sel:hover,.sort-sel:focus{border-color:var(--accent)}
+#sitesGrid[data-sort]:not([data-sort="manual"]) .drag-handle{visibility:hidden;pointer-events:none}
 
 /* ── Site rows ── */
 .section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
@@ -556,6 +563,14 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
       <input type="search" id="filterInput" class="filter-input" placeholder="Buscar por nombre, URL o etiqueta…" oninput="filterSites()" autocomplete="off">
       <button class="filter-clear" id="filterClear" onclick="clearFilter()" title="Limpiar filtro" style="display:none">✕</button>
     </div>
+    <select id="sortSel" class="sort-sel" onchange="setSortBy(this.value)" title="Ordenar la lista">
+      <option value="manual">↕ Orden manual</option>
+      <option value="name">A–Z · Nombre</option>
+      <option value="status">Estado · caídos primero</option>
+      <option value="rt">T. respuesta · lento primero</option>
+      <option value="uptime">Uptime · peor primero</option>
+      <option value="outages">Nº de caídas · más primero</option>
+    </select>
   </div>
   <!-- Bulk action bar -->
   <div class="bulk-bar" id="bulkBar">
@@ -2320,13 +2335,47 @@ function renderList(){
 
   let html='';
   groups.forEach(({tag,sites:gs})=>{
-    const filtered=filterQuery?gs.filter(s=>s.name.toLowerCase().includes(filterQuery)||s.url.toLowerCase().includes(filterQuery)||(s.tags||[]).some(t=>t.toLowerCase().includes(filterQuery))):gs;
+    let filtered=filterQuery?gs.filter(s=>s.name.toLowerCase().includes(filterQuery)||s.url.toLowerCase().includes(filterQuery)||(s.tags||[]).some(t=>t.toLowerCase().includes(filterQuery))):gs;
     if(!filtered.length)return;
-    if(tag&&allTags.length)html+=`<div class="group-header">${tag}<span class="group-count">${filtered.length}</span></div>`;
-    html+=filtered.map(site=>renderSiteRow(site)).join('');
+    filtered=sortSites(filtered);
+    const hasHeader=tag&&allTags.length;
+    const collapsed=hasHeader&&collapsedTags.has(tag);
+    if(hasHeader)html+=`<div class="group-header${collapsed?' collapsed':''}" data-tag="${(tag||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;')}" onclick="toggleGroupEl(this)"><span class="grp-chev">▾</span>${tag}<span class="group-count">${filtered.length}</span></div>`;
+    html+=`<div class="group-body${collapsed?' collapsed':''}">`+filtered.map(site=>renderSiteRow(site)).join('')+`</div>`;
   });
   if(!html&&filterQuery)html='<div class="empty"><h3>Sin resultados</h3><p>Prueba con otro término.</p></div>';
-  document.getElementById('sitesGrid').innerHTML=html;
+  const grid=document.getElementById('sitesGrid');
+  grid.dataset.sort=sortBy;
+  grid.innerHTML=html;
+}
+
+// ─── Orden y agrupación colapsable ─────────────────────────────────
+let sortBy=localStorage.getItem('sm_sort')||'manual';
+let collapsedTags=new Set(JSON.parse(localStorage.getItem('sm_collapsed')||'[]'));
+{const _ss=document.getElementById('sortSel');if(_ss)_ss.value=sortBy;}
+function setSortBy(v){sortBy=v;localStorage.setItem('sm_sort',v);renderList();}
+function toggleGroupEl(el){toggleGroup(el.dataset.tag);}
+function toggleGroup(tag){
+  if(collapsedTags.has(tag))collapsedTags.delete(tag);else collapsedTags.add(tag);
+  localStorage.setItem('sm_collapsed',JSON.stringify([...collapsedTags]));
+  renderList();
+}
+function statusRank(s){const st=statusMap[s.id];if(s.paused)return 4;if(st?.up===false)return 0;if(st?.up&&st?.degraded)return 1;if(st?.up)return 2;return 3;}
+function sortSites(arr){
+  if(sortBy==='manual')return arr;
+  const a=[...arr];
+  const rt=s=>statusMap[s.id]?.responseTime??statsMap[s.id]?.mean??-1;
+  const upt=s=>statsMap[s.id]?.uptime24h??statsMap[s.id]?.uptimePct??101;
+  const out=s=>statsMap[s.id]?.outageCount??0;
+  const byName=(x,y)=>x.name.localeCompare(y.name,'es',{sensitivity:'base'});
+  switch(sortBy){
+    case 'name':a.sort(byName);break;
+    case 'status':a.sort((x,y)=>statusRank(x)-statusRank(y)||byName(x,y));break;
+    case 'rt':a.sort((x,y)=>rt(y)-rt(x)||byName(x,y));break;        // lento primero
+    case 'uptime':a.sort((x,y)=>upt(x)-upt(y)||byName(x,y));break;   // peor primero
+    case 'outages':a.sort((x,y)=>out(y)-out(x)||byName(x,y));break;  // más caídas primero
+  }
+  return a;
 }
 
 function renderSiteRow(site){
