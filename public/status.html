@@ -37,6 +37,11 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
 .live-dot{width:5px;height:5px;border-radius:50%;background:var(--up);animation:blink 2s infinite;flex-shrink:0}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
 .last-update{font-size:10px;color:var(--muted)}
+/* ── Reloj del servidor ── */
+.srv-clock{display:flex;align-items:center;gap:8px;background:var(--s1);border:1px solid var(--border2);border-radius:9px;padding:6px 12px}
+.srv-clock .sc-dot{width:5px;height:5px;border-radius:50%;background:var(--up);box-shadow:0 0 7px var(--up);animation:blink 2s infinite;flex-shrink:0}
+.srv-clock .sc-time{font-family:var(--mono);font-size:14px;font-weight:600;color:var(--text);letter-spacing:.02em;font-variant-numeric:tabular-nums;line-height:1.1}
+.srv-clock .sc-lbl{font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:.13em;line-height:1.1}
 
 /* ── Overall banner ── */
 .overall{display:flex;align-items:center;gap:14px;padding:16px 20px;border-radius:12px;border:1px solid;margin-bottom:24px}
@@ -158,7 +163,13 @@ footer a:hover{color:var(--text)}
       <div><h1 id="logoTitle">Estado de servicios</h1><small id="logoTag"></small></div>
     </a>
     <div class="header-right">
-      <div class="live-dot" title="Actualizando automáticamente"></div>
+      <div class="srv-clock" title="Hora del servidor — actualización en tiempo real">
+        <span class="sc-dot"></span>
+        <div style="display:flex;flex-direction:column">
+          <span class="sc-time" id="srvClock">--:--:--</span>
+          <span class="sc-lbl">hora servidor</span>
+        </div>
+      </div>
       <span class="last-update" id="lastUpdate">–</span>
       <a href="/network" style="display:flex;align-items:center;gap:6px;background:var(--s1);border:1px solid var(--border2);color:var(--muted);padding:6px 12px;border-radius:7px;font-family:var(--mono);font-size:11px;text-decoration:none;transition:.15s">🌐 Red</a>
     <button class="admin-btn" onclick="openLogin()">⚙ Administrar</button>
@@ -544,6 +555,24 @@ loadMaintenanceBanner();
 loadStatus();
 setInterval(loadStatus, 60000);
 setInterval(loadMaintenanceBanner, 300000);
+
+// ── Reloj del servidor (sincroniza el offset y tictac local) ──
+let _srvOffset = 0;
+async function syncServerClock(){
+  try{
+    const t0=Date.now();
+    const r=await fetch('/api/time'); const d=await r.json();
+    const t1=Date.now();
+    _srvOffset = d.server - (t0 + (t1-t0)/2);  // compensa el round-trip
+  }catch{}
+}
+function tickServerClock(){
+  const el=document.getElementById('srvClock'); if(!el)return;
+  el.textContent=new Date(Date.now()+_srvOffset).toLocaleTimeString('es-ES',{hour12:false});
+}
+syncServerClock().then(tickServerClock);
+setInterval(tickServerClock,1000);
+setInterval(syncServerClock,60000);
 
 // Load community stats for banner
 fetch('/api/about').then(r=>r.json()).then(d=>{

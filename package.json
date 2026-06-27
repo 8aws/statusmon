@@ -1,6 +1,6 @@
 {
   "name": "statusmon",
-  "version": "5.7.3",
+  "version": "5.7.4",
   "description": "Self-hosted uptime & performance monitor",
   "main": "src/server.js",
   "scripts": {

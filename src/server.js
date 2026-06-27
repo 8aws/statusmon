@@ -64,7 +64,7 @@ function buildZipBuffer(entries) {
 // ──────────────────────────────────────────────────────────────────
 const nodemailer = require('nodemailer');
 
-const APP_VERSION = '5.7.3';
+const APP_VERSION = '5.7.4';
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const netCrypto = require('./network/crypto');
@@ -149,7 +149,7 @@ app.use(express.static(path.join(__dirname, '../public'), { index: false }));
 
 // Auth middleware for all /api/* except public endpoints
 app.use('/api', (req, res, next) => {
-  const PUBLIC = ['/api/auth/login', '/api/auth/status', '/api/auth/password', '/api/version', '/api/health', '/api/detect-url', '/api/status/public', '/api/peer/', '/statusmon/', '/badge/', '/api/releases', '/api/about', '/api/network/stats', '/api/network/map', '/api/status-theme', '/api/push/vapid-key', '/api/heartbeat/'];
+  const PUBLIC = ['/api/auth/login', '/api/auth/status', '/api/auth/password', '/api/version', '/api/health', '/api/time', '/api/detect-url', '/api/status/public', '/api/peer/', '/statusmon/', '/badge/', '/api/releases', '/api/about', '/api/network/stats', '/api/network/map', '/api/status-theme', '/api/push/vapid-key', '/api/heartbeat/'];
   const isCSV = req.path.endsWith('/csv');
   const isFavicon = /^\/sites\/[^/]+\/favicon$/.test(req.path);
   if (PUBLIC.some(p => req.path.startsWith(p.replace('/api',''))) || isCSV || isFavicon) return next();
@@ -1984,6 +1984,38 @@ app.get('/api/status-theme', (req, res) => {
 app.get('/api/version', (req, res) => res.json({ version: APP_VERSION }));
 app.get('/api/health',  (req, res) => res.json({ ok: true, version: APP_VERSION, uptime: Math.floor(process.uptime()) }));
 
+// ─── Hora del servidor + referencia externa neutral ───────────────
+// _extTimeOffset = (hora externa real) − (Date.now() local). Permite mostrar
+// si el reloj del servidor se ha desviado de una fuente NTP independiente.
+let _extTimeOffset = null;
+function refreshExternalTime() {
+  const t0 = Date.now();
+  try {
+    const req = https.get('https://www.cloudflare.com/cdn-cgi/trace', { timeout: 5000 }, res => {
+      let body = '';
+      res.on('data', c => { body += c; if (body.length > 4096) req.destroy(); });
+      res.on('end', () => {
+        const t1 = Date.now();
+        const m = /(?:^|\n)ts=([0-9.]+)/.exec(body);
+        if (m) {
+          const extMs = Math.round(parseFloat(m[1]) * 1000);
+          const localMid = t0 + (t1 - t0) / 2; // compensa el round-trip
+          if (extMs > 1e12) _extTimeOffset = extMs - localMid;
+        }
+      });
+    });
+    req.on('timeout', () => req.destroy());
+    req.on('error', () => {});
+  } catch { /* la referencia externa es opcional */ }
+}
+app.get('/api/time', (req, res) => {
+  res.json({
+    server: Date.now(),
+    external: _extTimeOffset != null ? Date.now() + _extTimeOffset : null,
+    tz: Intl.DateTimeFormat().resolvedOptions().timeZone || null,
+  });
+});
+
 // Detect public URL from request headers (works behind Cosmos/Traefik/NPM)
 app.get('/api/detect-url', (req, res) => {
   const proto = req.headers['x-forwarded-proto'] || req.headers['x-scheme'] || (req.socket?.encrypted ? 'https' : 'http');
@@ -2645,4 +2677,6 @@ app.listen(PORT, () => {
   scheduleMetrics();
   scheduleAutoBackup();
   scheduleSafetyFlush();
+  refreshExternalTime();
+  setInterval(refreshExternalTime, 5 * 60 * 1000); // refresca el offset NTP cada 5 min
 });

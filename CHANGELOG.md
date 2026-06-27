@@ -5,6 +5,14 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 
 ---
 
+## [5.7.4] — 2026-06-17
+
+### Added
+- **Reloj del servidor en tiempo real** — la página pública muestra la hora del servidor en la cabecera (sincronizada vía nuevo endpoint `/api/time`, con compensación del round-trip), reforzando que la información es en vivo.
+- **Barra de sincronización horaria en el admin** — tres relojes lado a lado (servidor / navegador del usuario / referencia online independiente vía Cloudflare) con indicador de desfase en color (verde <1s, ámbar <5s, rojo mayor). Revela de un vistazo si el reloj del servidor se ha desviado de la hora real.
+
+---
+
 ## [5.7.3] — 2026-06-17
 
 ### Fixed

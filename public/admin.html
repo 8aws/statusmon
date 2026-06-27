@@ -456,6 +456,27 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
 <div id="maintBanner">🔧 Modo mantenimiento activo — alertas silenciadas</div>
 <div id="installBar"><span>📲 Instalar StatusMon como app</span><button class="btn btn-sm" id="installBtn">Instalar</button></div>
 
+<!-- ── Barra de sincronización horaria (servidor / navegador / referencia online) ── -->
+<style>
+.sync-bar{display:flex;gap:8px;margin:0 auto 16px;flex-wrap:wrap}
+.clock-cell{flex:1;min-width:158px;display:flex;align-items:center;gap:10px;background:var(--s1);border:1px solid var(--border2);border-radius:11px;padding:9px 13px}
+.clock-cell .cc-ico{font-size:15px;opacity:.85;flex-shrink:0}
+.clock-cell .cc-body{display:flex;flex-direction:column;line-height:1.15;min-width:0}
+.clock-cell .cc-lbl{font-size:8px;text-transform:uppercase;letter-spacing:.13em;color:var(--muted)}
+.clock-cell .cc-time{font-family:var(--mono);font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--text)}
+.clock-cell .cc-drift{margin-left:auto;font-size:9px;font-weight:700;padding:2px 7px;border-radius:8px;white-space:nowrap;font-family:var(--mono)}
+.cc-drift.ok{background:var(--up2);color:var(--up)}
+.cc-drift.warn{background:var(--warn2);color:var(--warn)}
+.cc-drift.bad{background:var(--down2);color:var(--down)}
+.cc-drift.ref{background:var(--accent2);color:var(--accent)}
+.cc-drift.na{background:var(--faint);color:var(--muted)}
+</style>
+<div class="sync-bar" id="syncBar" title="Comparación de relojes en tiempo real — revela desfases del reloj del servidor">
+  <div class="clock-cell"><span class="cc-ico">🖥️</span><div class="cc-body"><span class="cc-lbl">servidor</span><span class="cc-time" id="clk-server">--:--:--</span></div><span class="cc-drift na" id="drift-server">—</span></div>
+  <div class="clock-cell"><span class="cc-ico">💻</span><div class="cc-body"><span class="cc-lbl">tu navegador</span><span class="cc-time" id="clk-browser">--:--:--</span></div><span class="cc-drift na" id="drift-browser">—</span></div>
+  <div class="clock-cell"><span class="cc-ico">🌐</span><div class="cc-body"><span class="cc-lbl">referencia online</span><span class="cc-time" id="clk-online">--:--:--</span></div><span class="cc-drift ref" id="drift-online">ref</span></div>
+</div>
+
 <!-- LIST VIEW -->
 <div id="listView">
   <div id="nasBar">
@@ -3167,6 +3188,48 @@ checkAuth();
 fetch('/api/version').then(r=>r.json()).then(d=>{const el=document.getElementById('headerVersion');if(el)el.textContent='v'+d.version+' · uptime · perf · analytics';}).catch(()=>{});
 loadAuthStatus();
 fetchAll().then(()=>{countdown=checkIntervalSec;scheduleNasRefresh(serverCfg.nasRefreshInterval||30);});
+
+// ── Barra de sincronización horaria ──
+let _clkServerOff=0, _clkExtOff=null;
+async function syncClocks(){
+  try{
+    const t0=Date.now();
+    const r=await fetch('/api/time'); const d=await r.json();
+    const t1=Date.now();
+    const mid=t0+(t1-t0)/2;                  // compensa el round-trip
+    _clkServerOff=d.server-mid;
+    _clkExtOff=(d.external!=null)?d.external-mid:null;
+  }catch{}
+}
+function fmtDrift(ms){
+  const a=Math.abs(ms), s=ms>=0?'+':'−';
+  const cls=a<1000?'ok':a<5000?'warn':'bad';
+  const txt=a<1000?`${s}${Math.round(a)}ms`:`${s}${(a/1000).toFixed(a<10000?1:0)}s`;
+  return {cls,txt};
+}
+function tickClocks(){
+  const now=Date.now();
+  const set=(id,off)=>{const el=document.getElementById(id);if(el)el.textContent=new Date(now+off).toLocaleTimeString('es-ES',{hour12:false});};
+  set('clk-server',_clkServerOff);
+  set('clk-browser',0);
+  // Referencia: la online si está disponible; si no, el navegador
+  const hasExt=_clkExtOff!=null;
+  set('clk-online',hasExt?_clkExtOff:0);
+  const refOff=hasExt?_clkExtOff:0;
+  const drift=(id,off,isRef)=>{
+    const el=document.getElementById(id);if(!el)return;
+    if(isRef){el.className='cc-drift ref';el.textContent='ref';return;}
+    const {cls,txt}=fmtDrift(off-refOff);
+    el.className='cc-drift '+cls;el.textContent='Δ '+txt;
+  };
+  drift('drift-server',_clkServerOff,false);
+  drift('drift-browser',0,!hasExt);          // si no hay online, el navegador es la referencia
+  if(hasExt){const el=document.getElementById('drift-online');if(el){el.className='cc-drift ref';el.textContent='ref';}}
+  else{const el=document.getElementById('drift-online');if(el){el.className='cc-drift na';el.textContent='n/d';}}
+}
+syncClocks().then(tickClocks);
+setInterval(tickClocks,1000);
+setInterval(syncClocks,60000);
 // Show keyboard shortcut toggle after load
 setTimeout(()=>{
   const kt=document.getElementById('kbdToggle');
