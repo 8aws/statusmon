@@ -1253,6 +1253,10 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
         <div><div class="setting-label">Visible en /status</div><div class="setting-sub">Los visitantes pueden verlo en la pantalla pública</div></div>
         <label class="toggle"><input type="checkbox" id="e-public" checked><span class="toggle-slider"></span></label>
       </div>
+      <div class="setting-row" style="margin-top:8px">
+        <div><div class="setting-label">⏸ Pausar comprobaciones</div><div class="setting-sub">Deja de comprobar este sitio (no cuenta para uptime)</div></div>
+        <label class="toggle"><input type="checkbox" id="e-paused"><span class="toggle-slider"></span></label>
+      </div>
     </div>
     <!-- Advanced tab -->
     <div id="etab-adv" class="tab-panel">
@@ -2432,9 +2436,7 @@ function renderSiteRow(site){
     <div class="col-c"><div class="m-val ${rtCls(ttfb,isUp)}">${ttfb?fmt(ttfb):'–'}${baselineDot}</div><div class="m-lbl">ttfb${baselineWarn?'<span style="color:var(--warn)"> ▲</span>':''}</div></div>
     <div class="col-c"><span class="uptime-pill ${uptimeCls(upPct)}">${fmtPct(upPct)}</span><div class="m-lbl">24h</div></div>
     <div class="row-actions" onclick="event.stopPropagation()">
-      <button class="icon-btn" onclick="editSite('${site.id}',event)" title="Editar sitio">✎</button>
-      <button class="icon-btn ${isPaused?'pause-active':''}" onclick="togglePause('${site.id}',event)" title="${isPaused?'Reanudar':'Pausar'}">${isPaused?'▶':'⏸'}</button>
-      <button class="icon-btn ${isMaint?'pause-active':''}" onclick="toggleMaintenance('${site.id}',event)" title="${isMaint?'Quitar mantenimiento (reactivar alertas)':'Mantenimiento general (silenciar alertas)'}">🔧</button>
+      <button class="icon-btn" onclick="editSite('${site.id}',event)" title="Editar (pausar y mantenimiento dentro)">✎</button>
       <button class="icon-btn" onclick="checkNow('${site.id}',event)" title="Comprobar ahora">↺</button>
       <button class="icon-btn ${isPrivate?'pause-active':''}" onclick="togglePublic('${site.id}',event)" title="${isPrivate?'Privado — solo admin':'Público — visible en /status'}">${isPrivate?'🔒':'👁'}</button>
       <button class="icon-btn del" onclick="deleteSite('${site.id}',event)" title="Eliminar">✕</button>
@@ -2459,6 +2461,7 @@ function editSite(id,e){
   document.getElementById('e-url').value=site.url||'';
   document.getElementById('e-timeout').value=site.timeout||10000;
   document.getElementById('e-public').checked=site.public!==false;
+  document.getElementById('e-paused').checked=!!site.paused;
   updateEditUrlHint();
   renderEditTags();
   // Advanced tab
@@ -2580,6 +2583,7 @@ async function saveEditSite(){
     timeout:parseInt(document.getElementById('e-timeout').value)||10000,
     tags:_editTags,
     public:document.getElementById('e-public').checked,
+    paused:document.getElementById('e-paused').checked,
     checkInterval:interval,
     webhook:{
       enabled:whEnabled,
