@@ -111,6 +111,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
 .tag.ssl-ok{border-color:rgba(0,184,122,.3);color:var(--up)}.tag.ssl-warn{border-color:rgba(201,122,0,.3);color:var(--warn)}.tag.ssl-bad{border-color:rgba(224,35,78,.3);color:var(--down)}
 [data-theme="dark"] .tag.ssl-ok{border-color:rgba(42,255,160,.3)}
 .tag.paused-tag{border-color:var(--muted);color:var(--muted)}
+.tag.tag-user{background:var(--accent2);border-color:rgba(108,99,255,.35);color:var(--accent)}
 .col-c{text-align:center}
 .m-val{font-size:13px;font-weight:600;color:var(--text)}
 .m-val.fast{color:var(--up)}.m-val.slow{color:var(--warn)}.m-val.dead{color:var(--down)}
@@ -480,8 +481,8 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
 </style>
 <div class="sync-bar" id="syncBar" title="Comparación de relojes en tiempo real — revela desfases del reloj del servidor">
   <div class="clock-cell"><span class="cc-ico">🖥️</span><div class="cc-body"><span class="cc-lbl">servidor</span><span class="cc-time" id="clk-server">--:--:--</span></div><span class="cc-drift na" id="drift-server">—</span></div>
-  <div class="clock-cell"><span class="cc-ico">💻</span><div class="cc-body"><span class="cc-lbl">tu navegador</span><span class="cc-time" id="clk-browser">--:--:--</span></div><span class="cc-drift na" id="drift-browser">—</span></div>
-  <div class="clock-cell"><span class="cc-ico">🌐</span><div class="cc-body"><span class="cc-lbl">referencia online</span><span class="cc-time" id="clk-online">--:--:--</span></div><span class="cc-drift ref" id="drift-online">ref</span></div>
+  <div class="clock-cell" id="cell-browser"><span class="cc-ico">💻</span><div class="cc-body"><span class="cc-lbl">tu navegador</span><span class="cc-time" id="clk-browser">--:--:--</span></div><span class="cc-drift na" id="drift-browser">—</span></div>
+  <div class="clock-cell" id="cell-online"><span class="cc-ico">🌐</span><div class="cc-body"><span class="cc-lbl">referencia online</span><span class="cc-time" id="clk-online">--:--:--</span></div><span class="cc-drift ref" id="drift-online">ref</span></div>
 </div>
 
 <!-- LIST VIEW -->
@@ -2390,8 +2391,9 @@ function renderSiteRow(site){
   const upPct=st?.uptime24h??st?.uptimePct??null;
   const ssl=st?.lastSsl??s?.ssl??null;
   const stack=st?.lastStack??s?.stack??null;
-  const tags=(stack?.clues||[]).slice(0,2).map(c=>`<span class="tag">${c}</span>`).join('');
-  const siteTags=(site.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('');
+  const clues=[...new Map((stack?.clues||[]).map(c=>[String(c).toLowerCase(),c])).values()].slice(0,2);
+  const tags=clues.map(c=>`<span class="tag">${c}</span>`).join('');
+  const siteTags=(site.tags||[]).map(t=>`<span class="tag tag-user">${t}</span>`).join('');
   const pausedTag=isPaused?'<span class="tag paused-tag">⏸ Pausado</span>':'';
   const isMaint=site.maintenance||s?.maintenance;
   const maintTag=isMaint?'<span class="tag" style="border-color:rgba(245,166,35,.5);color:var(--warn)">🔧 Mantenimiento</span>':'';
@@ -3275,6 +3277,15 @@ function tickClocks(){
   drift('drift-browser',0,!hasExt);          // si no hay online, el navegador es la referencia
   if(hasExt){const el=document.getElementById('drift-online');if(el){el.className='cc-drift ref';el.textContent='ref';}}
   else{const el=document.getElementById('drift-online');if(el){el.className='cc-drift na';el.textContent='n/d';}}
+  // Adaptativo: si todo está en verde (<1s), mostrar solo la hora del servidor;
+  // si hay desfase, desplegar las 3 fuentes para evidenciarlo.
+  const serverDrift=_clkServerOff-refOff, browserDrift=-refOff;
+  const allGreen=Math.abs(serverDrift)<1000 && Math.abs(browserDrift)<1000;
+  const cb=document.getElementById('cell-browser'), co=document.getElementById('cell-online');
+  if(cb)cb.style.display=allGreen?'none':'';
+  if(co)co.style.display=allGreen?'none':'';
+  const ds=document.getElementById('drift-server');
+  if(ds&&allGreen){ds.className='cc-drift ok';ds.textContent='✓ en hora';}
 }
 syncClocks().then(tickClocks);
 setInterval(tickClocks,1000);
