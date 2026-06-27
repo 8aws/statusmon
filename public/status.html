@@ -15,7 +15,7 @@
   --text:#eef0fa;--muted:#8b8fb8;--faint:#222538;
   --up:#2affa0;--up2:rgba(42,255,160,.1);
   --down:#ff3d6b;--down2:rgba(255,61,107,.1);
-  --warn:#ffb830;--warn2:rgba(255,184,48,.1);
+  --warn:#ffc21a;--warn2:rgba(255,194,26,.12);
   --accent:#6c63ff;--accent2:rgba(108,99,255,.12);
   --mono:'IBM Plex Mono',monospace;--sans:'Bricolage Grotesque',sans-serif;
   --safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px);
@@ -32,7 +32,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
 .logo h1{font-family:var(--sans);font-size:16px;font-weight:800;color:var(--text)}
 .logo small{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;display:block}
 .header-right{display:flex;align-items:center;gap:8px}
-.admin-btn{display:flex;align-items:center;gap:6px;background:var(--s1);border:1px solid var(--border2);color:var(--muted);padding:6px 12px;border-radius:7px;font-family:var(--mono);font-size:11px;cursor:pointer;transition:.15s;white-space:nowrap}
+.admin-btn{display:flex;align-items:center;gap:6px;background:var(--s1);border:1px solid var(--border2);color:var(--muted);padding:6px 12px;border-radius:7px;font-family:var(--mono);font-size:12px;cursor:pointer;transition:.15s;white-space:nowrap}
 .admin-btn:hover{border-color:var(--accent);color:var(--accent)}
 .live-dot{width:5px;height:5px;border-radius:50%;background:var(--up);animation:blink 2s infinite;flex-shrink:0}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
@@ -41,7 +41,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
 .srv-clock{display:flex;align-items:center;gap:8px;background:var(--s1);border:1px solid var(--border2);border-radius:9px;padding:6px 12px}
 .srv-clock .sc-dot{width:5px;height:5px;border-radius:50%;background:var(--up);box-shadow:0 0 7px var(--up);animation:blink 2s infinite;flex-shrink:0}
 .srv-clock .sc-time{font-family:var(--mono);font-size:14px;font-weight:600;color:var(--text);letter-spacing:.02em;font-variant-numeric:tabular-nums;line-height:1.1}
-.srv-clock .sc-lbl{font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:.13em;line-height:1.1}
+.srv-clock .sc-lbl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.13em;line-height:1.1}
 
 /* ── Overall banner ── */
 .overall{display:flex;align-items:center;gap:14px;padding:16px 20px;border-radius:12px;border:1px solid;margin-bottom:24px}
@@ -58,12 +58,12 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
 .overall.ok .overall-title{color:var(--up)}
 .overall.incidents .overall-title{color:var(--down)}
 .overall.maint .overall-title{color:var(--warn)}
-.overall-sub{font-size:11px;color:var(--text);opacity:.75;margin-top:3px}
+.overall-sub{font-size:12px;color:var(--text);opacity:.75;margin-top:3px}
 
 /* ── Tags filter bar ── */
 .tag-bar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px;align-items:center}
 .tag-bar-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-right:2px}
-.tag-pill{padding:4px 12px;border-radius:20px;font-size:11px;cursor:pointer;transition:.15s;border:1px solid var(--border2);background:var(--faint);color:var(--muted);text-decoration:none;display:inline-block}
+.tag-pill{padding:4px 12px;border-radius:20px;font-size:12px;cursor:pointer;transition:.15s;border:1px solid var(--border2);background:var(--faint);color:var(--muted);text-decoration:none;display:inline-block}
 .tag-pill:hover{border-color:var(--accent);color:var(--accent)}
 .tag-pill.active{background:var(--accent2);border-color:var(--accent);color:var(--accent)}
 .tag-pill.all{border-color:var(--border2)}
@@ -105,14 +105,14 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
 .incident-card{background:var(--down2);border:1px solid rgba(255,61,107,.3);border-radius:10px;padding:14px 18px;margin-bottom:8px;display:flex;align-items:center;gap:12px}
 .inc-dot{width:8px;height:8px;border-radius:50%;background:var(--down);animation:pulse 1.5s infinite;flex-shrink:0}
 .inc-name{font-family:var(--sans);font-weight:700;color:var(--down)}
-.inc-since{font-size:11px;color:var(--muted);margin-top:2px}
+.inc-since{font-size:12px;color:var(--muted);margin-top:2px}
 
 /* ── Login modal ── */
 .login-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);z-index:100;align-items:center;justify-content:center;padding:20px}
 .login-overlay.open{display:flex}
 .login-card{background:var(--s1);border:1px solid var(--border2);border-radius:16px;padding:32px;width:100%;max-width:340px}
 .login-card h2{font-family:var(--sans);font-size:18px;font-weight:700;color:var(--text);margin-bottom:6px}
-.login-card p{font-size:11px;color:var(--muted);margin-bottom:20px}
+.login-card p{font-size:12px;color:var(--muted);margin-bottom:20px}
 .lc-close{float:right;background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;margin-top:-4px}
 .lc-close:hover{color:var(--text)}
 .field{margin-bottom:14px}
@@ -122,7 +122,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
 .btn-login{width:100%;padding:11px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-family:var(--mono);font-size:13px;font-weight:600;cursor:pointer;transition:opacity .15s}
 .btn-login:hover{opacity:.85}
 .btn-login:disabled{opacity:.5;cursor:not-allowed}
-.login-error{background:var(--down2);border:1px solid rgba(255,61,107,.3);color:var(--down);padding:8px 12px;border-radius:7px;font-size:11px;margin-top:10px;display:none;text-align:center}
+.login-error{background:var(--down2);border:1px solid rgba(255,61,107,.3);color:var(--down);padding:8px 12px;border-radius:7px;font-size:12px;margin-top:10px;display:none;text-align:center}
 .login-error.show{display:block}
 .login-attempts{font-size:10px;color:var(--muted);text-align:center;margin-top:6px;display:none}
 .login-attempts.show{display:block}
@@ -171,7 +171,7 @@ footer a:hover{color:var(--text)}
         </div>
       </div>
       <span class="last-update" id="lastUpdate">–</span>
-      <a href="/network" style="display:flex;align-items:center;gap:6px;background:var(--s1);border:1px solid var(--border2);color:var(--muted);padding:6px 12px;border-radius:7px;font-family:var(--mono);font-size:11px;text-decoration:none;transition:.15s">🌐 Red</a>
+      <a href="/network" style="display:flex;align-items:center;gap:6px;background:var(--s1);border:1px solid var(--border2);color:var(--muted);padding:6px 12px;border-radius:7px;font-family:var(--mono);font-size:12px;text-decoration:none;transition:.15s">🌐 Red</a>
     <button class="admin-btn" onclick="openLogin()">⚙ Administrar</button>
     </div>
   </header>
