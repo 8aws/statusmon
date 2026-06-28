@@ -8,7 +8,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title id="pageTitle">Estado de servicios</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css" rel="stylesheet">
 <style>
 :root{
   --bg:#1c1f2e;--s1:#222533;--s2:#272a3a;--border:#2e3248;--border2:#252840;
@@ -171,8 +173,8 @@ footer a:hover{color:var(--text)}
         </div>
       </div>
       <span class="last-update" id="lastUpdate">–</span>
-      <a href="/network" style="display:flex;align-items:center;gap:6px;background:var(--s1);border:1px solid var(--border2);color:var(--muted);padding:6px 12px;border-radius:7px;font-family:var(--mono);font-size:12px;text-decoration:none;transition:.15s">🌐 Red</a>
-    <button class="admin-btn" onclick="openLogin()">⚙ Administrar</button>
+      <a href="/network" style="display:flex;align-items:center;gap:6px;background:var(--s1);border:1px solid var(--border2);color:var(--muted);padding:6px 12px;border-radius:7px;font-family:var(--mono);font-size:12px;text-decoration:none;transition:.15s"><i class="ti ti-world"></i> Red</a>
+    <button class="admin-btn" onclick="openLogin()"><i class="ti ti-settings"></i> Administrar</button>
     </div>
   </header>
 
@@ -187,13 +189,13 @@ footer a:hover{color:var(--text)}
 
   <!-- Upcoming maintenance banner -->
   <div id="maint-upcoming" style="display:none;margin-bottom:14px;background:rgba(201,122,0,.12);border:1px solid rgba(201,122,0,.4);border-radius:10px;padding:12px 16px">
-    <div style="font-weight:700;margin-bottom:4px;font-family:var(--sans);font-size:13px">🔧 Mantenimiento programado</div>
+    <div style="font-weight:700;margin-bottom:4px;font-family:var(--sans);font-size:13px"><i class="ti ti-tool"></i> Mantenimiento programado</div>
     <div id="maint-upcoming-body" style="font-size:12px;color:var(--muted);line-height:1.7"></div>
   </div>
 
   <!-- Active incidents -->
   <div id="incidents-section" style="display:none">
-    <div class="section-title" style="color:var(--down);margin-bottom:10px">⚠ Incidencias activas</div>
+    <div class="section-title" style="color:var(--down);margin-bottom:10px"><i class="ti ti-alert-triangle"></i> Incidencias activas</div>
     <div id="incidents-list"></div>
   </div>
 
@@ -284,7 +286,7 @@ async function checkIfLoggedIn() {
     if (d.authenticated) {
       // Replace admin button with direct link
       document.querySelector('.admin-btn').onclick = () => location.href = '/admin';
-      document.querySelector('.admin-btn').textContent = '⚙ Panel admin';
+      document.querySelector('.admin-btn').innerHTML = '<i class="ti ti-settings"></i> Panel admin';
       document.querySelector('.admin-btn').style.borderColor = 'var(--accent)';
       document.querySelector('.admin-btn').style.color = 'var(--accent)';
     }
@@ -328,7 +330,7 @@ function render(data) {
   overall.style.display = 'flex';
   if (data.maintenanceMode) {
     overall.className = 'overall maint';
-    document.getElementById('overall-title').textContent = '🔧 Mantenimiento en curso';
+    document.getElementById('overall-title').innerHTML = '<i class="ti ti-tool"></i> Mantenimiento en curso';
     document.getElementById('overall-sub').textContent = 'Algunos servicios pueden estar temporalmente no disponibles';
   } else if (down.length === 0) {
     overall.className = 'overall ok';
@@ -402,7 +404,7 @@ function render(data) {
         ${tags ? `<div class="tags">${tags}</div>` : ''}
       </div>
       <div class="s-metric">
-        <div class="val ${isMaint ? 'y' : s.up ? '' : 'r'}">${isMaint ? '🔧 Mantenim.' : s.up ? 'OK' : 'CAÍDO'}</div>
+        <div class="val ${isMaint ? 'y' : s.up ? '' : 'r'}">${isMaint ? '<i class="ti ti-tool"></i> Mantenim.' : s.up ? 'OK' : 'CAÍDO'}</div>
         <div class="lbl">${timeAgo(s.lastCheck)}</div>
       </div>
       <div class="s-metric">
@@ -541,7 +543,7 @@ async function loadMaintenanceBanner() {
     const fmtDate = ts => new Date(ts).toLocaleDateString('es',{weekday:'short',day:'numeric',month:'short'});
     body.innerHTML = upcoming.map(u =>
       u.inProgress
-        ? `<div>🔧 <strong>${u.site}</strong> — en mantenimiento ahora hasta las ${fmtTime(u.end)}</div>`
+        ? `<div><i class="ti ti-tool"></i> <strong>${u.site}</strong> — en mantenimiento ahora hasta las ${fmtTime(u.end)}</div>`
         : `<div>📅 <strong>${u.site}</strong> — mantenimiento programado el ${fmtDate(u.start)} de ${fmtTime(u.start)} a ${fmtTime(u.end)}</div>`
     ).join('');
     banner.style.display = 'block';

@@ -7,6 +7,8 @@
 <title>StatusMon — Acceso</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css" rel="stylesheet">
 <style>
 :root{--bg:#07080d;--s1:#0d0e18;--border:#1a1c2e;--border2:#252840;--text:#dde0f5;--muted:#4a4d6e;--faint:#1a1c2a;--up:#2affa0;--down:#ff3d6b;--accent:#6c63ff;--accent2:rgba(108,99,255,.12);--mono:'IBM Plex Mono',monospace;--sans:'Bricolage Grotesque',sans-serif}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -71,7 +73,7 @@ h2{font-family:var(--sans);font-size:17px;font-weight:700;color:#fff;margin-bott
 
   <!-- First time setup -->
   <div id="setupMode" style="display:none">
-    <div class="setup-badge">⚙ Primera configuración</div>
+    <div class="setup-badge"><i class="ti ti-settings"></i> Primera configuración</div>
     <h2>Crear contraseña</h2>
     <p class="subtitle">Protege tu panel con una contraseña</p>
     <div class="field">

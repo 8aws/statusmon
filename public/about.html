@@ -7,7 +7,9 @@
 <meta name="description" content="StatusMon — Monitor de uptime self-hosted, descentralizado y de código abierto">
 <title>StatusMon — Monitor de uptime self-hosted</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;600&family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css" rel="stylesheet">
 <style>
 :root{
   --bg:#07080d;--s1:#0d0e18;--s2:#12141f;--border:#1a1c2e;--border2:#252840;
@@ -178,7 +180,7 @@ footer a:hover{color:var(--text)}
     <p>Corre en tu NAS, VPS o Raspberry Pi. Tus datos no salen de tu servidor.</p>
   </div>
   <div class="feature">
-    <div class="feature-icon">⚡</div>
+    <div class="feature-icon"><i class="ti ti-bolt"></i></div>
     <h3>TTFB + Stack detection</h3>
     <p>Mide tiempo real de respuesta, TTFB, detecta nginx/Apache/PHP/Node automáticamente.</p>
   </div>
@@ -188,12 +190,12 @@ footer a:hover{color:var(--text)}
     <p>Vigila la expiración de tus certificados con alertas anticipadas configurables.</p>
   </div>
   <div class="feature">
-    <div class="feature-icon">🌐</div>
+    <div class="feature-icon"><i class="ti ti-world"></i></div>
     <h3>Red colaborativa</h3>
     <p>Verificación cruzada entre nodos. Si tu red cae, otros nodos te avisan desde fuera.</p>
   </div>
   <div class="feature">
-    <div class="feature-icon">📊</div>
+    <div class="feature-icon"><i class="ti ti-chart-bar"></i></div>
     <h3>Estadísticas completas</h3>
     <p>p50/p95/p99, uptime 24h/7d, MTBF, tendencias, distribución de códigos HTTP.</p>
   </div>
@@ -229,7 +231,7 @@ footer a:hover{color:var(--text)}
     <button class="install-tab" onclick="switchInstall('synology')">💾 Synology</button>
     <button class="install-tab" onclick="switchInstall('zima')">❄️ ZimaOS</button>
     <button class="install-tab" onclick="switchInstall('vps')">☁️ VPS</button>
-    <button class="install-tab" onclick="switchInstall('cosmos')">🌐 Cosmos</button>
+    <button class="install-tab" onclick="switchInstall('cosmos')"><i class="ti ti-world"></i> Cosmos</button>
   </div>
 
   <div class="install-panel active" id="panel-docker">
@@ -262,7 +264,7 @@ docker compose up -d --build</div>
       <li>Abre Container Station → Aplicaciones → Crear → elige la carpeta con <code>docker-compose.yml</code></li>
       <li>Pulsa Crear — Container Station construirá la imagen y arrancará</li>
     </ol>
-    <p class="install-note" style="margin-top:12px">⚠ Usa siempre rutas absolutas en el NAS para el bind mount, no rutas relativas (<code>./data</code>). Para actualizar: sube el nuevo ZIP, aplica desde el panel Admin → Actualización.</p>
+    <p class="install-note" style="margin-top:12px"><i class="ti ti-alert-triangle"></i> Usa siempre rutas absolutas en el NAS para el bind mount, no rutas relativas (<code>./data</code>). Para actualizar: sube el nuevo ZIP, aplica desde el panel Admin → Actualización.</p>
   </div>
 
   <div class="install-panel" id="panel-synology">
@@ -311,7 +313,7 @@ sh install-zima.sh</div>
         </li>
         <li>ZimaOS asignará el puerto automáticamente y aparecerá como app nativa</li>
       </ol>
-      <p class="install-note">⚠️ El Custom Install requiere que los archivos fuente estén extraídos en el servidor. El contexto de build (<code>build: .</code>) apunta a <code>~/statusmon-v5.6.7/</code>.</p>
+      <p class="install-note"><i class="ti ti-alert-triangle"></i> El Custom Install requiere que los archivos fuente estén extraídos en el servidor. El contexto de build (<code>build: .</code>) apunta a <code>~/statusmon-v5.6.7/</code>.</p>
     </div>
 
     <p class="install-note">

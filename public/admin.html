@@ -465,8 +465,8 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
 </header>
 
 <div id="offlineBanner">Sin conexión — mostrando datos en caché</div>
-<div id="maintBanner">🔧 Modo mantenimiento activo — alertas silenciadas</div>
-<div id="installBar"><span>📲 Instalar StatusMon como app</span><button class="btn btn-sm" id="installBtn">Instalar</button></div>
+<div id="maintBanner"><i class="ti ti-tool"></i> Modo mantenimiento activo — alertas silenciadas</div>
+<div id="installBar"><span><i class="ti ti-download"></i> Instalar StatusMon como app</span><button class="btn btn-sm" id="installBtn">Instalar</button></div>
 
 <!-- ── Barra de sincronización horaria (servidor / navegador / referencia online) ── -->
 <style>
@@ -566,7 +566,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
     <div class="filter-wrap">
       <span class="filter-icon"><i class="ti ti-search" style="font-size:13px"></i></span>
       <input type="search" id="filterInput" class="filter-input" placeholder="Buscar por nombre, URL o etiqueta…" oninput="filterSites()" autocomplete="off">
-      <button class="filter-clear" id="filterClear" onclick="clearFilter()" title="Limpiar filtro" style="display:none">✕</button>
+      <button class="filter-clear" id="filterClear" onclick="clearFilter()" title="Limpiar filtro" style="display:none"><i class="ti ti-x"></i></button>
     </div>
     <select id="sortSel" class="sort-sel" onchange="setSortBy(this.value)" title="Ordenar la lista">
       <option value="manual">↕ Orden manual</option>
@@ -581,13 +581,13 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
   <div class="bulk-bar" id="bulkBar">
     <span class="bulk-bar-info" id="bulkCount">0 seleccionados</span>
     <div class="bulk-bar-btns">
-      <button onclick="bulkAction('pause')">⏸ Pausar</button>
-      <button onclick="bulkAction('resume')">▶ Reanudar</button>
-      <button onclick="bulkAction('check')">↺ Comprobar</button>
-      <button onclick="bulkAction('public')">👁 Pub/Priv</button>
-      <button onclick="bulkAction('delete')" class="del">✕ Eliminar</button>
+      <button onclick="bulkAction('pause')"><i class="ti ti-player-pause"></i> Pausar</button>
+      <button onclick="bulkAction('resume')"><i class="ti ti-player-play"></i> Reanudar</button>
+      <button onclick="bulkAction('check')"><i class="ti ti-refresh"></i> Comprobar</button>
+      <button onclick="bulkAction('public')"><i class="ti ti-eye"></i> Pub/Priv</button>
+      <button onclick="bulkAction('delete')" class="del"><i class="ti ti-x"></i> Eliminar</button>
     </div>
-    <button class="bulk-bar-clear" onclick="clearSelection()" title="Deseleccionar todo">✕</button>
+    <button class="bulk-bar-clear" onclick="clearSelection()" title="Deseleccionar todo"><i class="ti ti-x"></i></button>
   </div>
   <div id="sitesGrid"><div class="empty"><h3>Cargando…</h3></div></div>
 </div>
@@ -606,18 +606,18 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
       </div>
     </div>
     <div class="d-actions">
-      <button class="btn btn-sm" onclick="checkNowDetail()">↺ Comprobar</button>
-      <button class="btn btn-sm" id="d-pauseBtn" onclick="togglePauseDetail()">⏸ Pausar</button>
-      <a class="btn btn-sm" id="d-csvBtn" href="#" target="_blank" style="text-decoration:none">↓ CSV</a>
-      <button class="btn btn-sm" id="d-slaBtn" onclick="exportSla()" title="Exportar informe SLA del mes actual">📊 SLA</button>
-      <button class="btn btn-sm" id="d-timelineBtn" onclick="toggleTimeline()" title="Ver timeline de incidencias">📅 Timeline</button>
+      <button class="btn btn-sm" onclick="checkNowDetail()"><i class="ti ti-refresh"></i> Comprobar</button>
+      <button class="btn btn-sm" id="d-pauseBtn" onclick="togglePauseDetail()"><i class="ti ti-player-pause"></i> Pausar</button>
+      <a class="btn btn-sm" id="d-csvBtn" href="#" target="_blank" style="text-decoration:none"><i class="ti ti-download"></i> CSV</a>
+      <button class="btn btn-sm" id="d-slaBtn" onclick="exportSla()" title="Exportar informe SLA del mes actual"><i class="ti ti-file-text"></i> SLA</button>
+      <button class="btn btn-sm" id="d-timelineBtn" onclick="toggleTimeline()" title="Ver timeline de incidencias"><i class="ti ti-timeline"></i> Timeline</button>
       <button class="btn btn-sm" style="background:var(--down2);border-color:var(--down);color:var(--down)" onclick="deleteDetail()">Eliminar</button>
     </div>
   </div>
   <div id="d-diag-banner" style="display:none;background:var(--down2);border:1px solid var(--down);border-radius:9px;padding:12px 16px;margin-bottom:16px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-      <span style="font-family:var(--sans);font-weight:700;color:var(--down)">🔴 Sitio caído — Diagnóstico</span>
-      <button class="btn btn-sm" onclick="runDiagnose()" id="d-diag-btn">↺ Rediagnosticar</button>
+      <span style="font-family:var(--sans);font-weight:700;color:var(--down)"><i class="ti ti-alert-circle"></i> Sitio caído — Diagnóstico</span>
+      <button class="btn btn-sm" onclick="runDiagnose()" id="d-diag-btn"><i class="ti ti-refresh"></i> Rediagnosticar</button>
     </div>
     <div id="d-diag-content" style="font-size:12px;color:var(--text)">Ejecutando diagnóstico…</div>
     <div id="d-net-verify" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)"></div>
@@ -889,8 +889,8 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
           <button class="mail-method-btn" data-method="outlook" onclick="selectMailMethod('outlook')"><span class="mail-method-icon">⊞</span>Outlook</button>
           <button class="mail-method-btn" data-method="yahoo"   onclick="selectMailMethod('yahoo')"><span class="mail-method-icon">Y!</span>Yahoo</button>
           <button class="mail-method-btn" data-method="icloud"  onclick="selectMailMethod('icloud')"><span class="mail-method-icon">☁</span>iCloud</button>
-          <button class="mail-method-btn" data-method="direct"  onclick="selectMailMethod('direct')"><span class="mail-method-icon">⚡</span>Directo</button>
-          <button class="mail-method-btn" data-method="smtp"    onclick="selectMailMethod('smtp')"><span class="mail-method-icon">⚙</span>Manual</button>
+          <button class="mail-method-btn" data-method="direct"  onclick="selectMailMethod('direct')"><span class="mail-method-icon"><i class="ti ti-bolt"></i></span>Directo</button>
+          <button class="mail-method-btn" data-method="smtp"    onclick="selectMailMethod('smtp')"><span class="mail-method-icon"><i class="ti ti-settings"></i></span>Manual</button>
         </div>
       </div>
 
@@ -904,14 +904,14 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
 
       <!-- Aviso modo directo -->
       <div class="settings-section" id="mail-direct-section" style="display:none">
-        <div class="mail-warn">⚠ El modo <strong>Directo</strong> entrega sin relay SMTP resolviendo los MX del destinatario. No requiere configuración pero los mensajes probablemente irán a spam o serán rechazados por Gmail y Outlook. Recomendado únicamente para redes internas o servidores con PTR y SPF configurados.</div>
+        <div class="mail-warn"><i class="ti ti-alert-triangle"></i> El modo <strong>Directo</strong> entrega sin relay SMTP resolviendo los MX del destinatario. No requiere configuración pero los mensajes probablemente irán a spam o serán rechazados por Gmail y Outlook. Recomendado únicamente para redes internas o servidores con PTR y SPF configurados.</div>
         <div class="field" style="margin-top:10px"><label for="cfg-mail-from-direct">Remitente</label><input class="setting-input full" type="email" id="cfg-mail-from-direct" placeholder="statusmon@tudominio.com"></div>
       </div>
 
       <!-- Manual SMTP acordeón -->
       <div class="settings-section" id="mail-smtp-section" style="display:none">
         <button class="smtp-accordion-btn" onclick="toggleSmtpAccordion(this)">
-          <span>Configuración SMTP</span><span id="smtp-accordion-arrow">▾</span>
+          <span>Configuración SMTP</span><span id="smtp-accordion-arrow"><i class="ti ti-chevron-down"></i></span>
         </button>
         <div class="smtp-accordion-body" id="smtp-accordion-body">
           <div style="padding-top:10px">
@@ -989,7 +989,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
       <div class="settings-section">
         <div class="settings-section-title">Uso de /data</div>
         <div id="data-stats">Cargando…</div>
-        <button class="settings-save" onclick="compactHistory()" style="margin-top:10px;background:var(--accent2);border:1px solid var(--accent);color:var(--accent)">⚡ Compactar historial</button>
+        <button class="settings-save" onclick="compactHistory()" style="margin-top:10px;background:var(--accent2);border:1px solid var(--accent);color:var(--accent)"><i class="ti ti-bolt"></i> Compactar historial</button>
         <div id="compact-result" style="font-size:10px;margin-top:5px;color:var(--muted)"></div>
       </div>
 
@@ -1002,7 +1002,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
             <option value="all">— Todos los sitios —</option>
           </select>
         </div>
-        <button class="settings-save" onclick="clearHistory()" style="margin-top:8px;background:var(--down2);border:1px solid var(--down);color:var(--down)">🗑 Borrar historial</button>
+        <button class="settings-save" onclick="clearHistory()" style="margin-top:8px;background:var(--down2);border:1px solid var(--down);color:var(--down)"><i class="ti ti-trash"></i> Borrar historial</button>
         <div id="clear-history-result" style="font-size:10px;margin-top:5px;color:var(--muted)"></div>
       </div>
 
@@ -1011,7 +1011,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
         <div id="backups-list">Cargando…</div>
         <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
           <button class="settings-save" onclick="clearAllBackups()" style="background:var(--faint);border:1px solid var(--border2);color:var(--muted)">Eliminar todos</button>
-          <button class="btn btn-sm" onclick="document.getElementById('restore-file').click()" title="Restaurar desde un backup descargado previamente">↩ Restaurar desde backup…</button>
+          <button class="btn btn-sm" onclick="document.getElementById('restore-file').click()" title="Restaurar desde un backup descargado previamente"><i class="ti ti-arrow-back-up"></i> Restaurar desde backup…</button>
           <input type="file" id="restore-file" accept=".zip" style="display:none" onchange="restoreFromBackup(this)">
         </div>
         <div id="backups-result" style="font-size:10px;margin-top:5px;color:var(--muted)"></div>
@@ -1258,7 +1258,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
         <label class="toggle"><input type="checkbox" id="e-public" checked><span class="toggle-slider"></span></label>
       </div>
       <div class="setting-row" style="margin-top:8px">
-        <div><div class="setting-label">⏸ Pausar comprobaciones</div><div class="setting-sub">Deja de comprobar este sitio (no cuenta para uptime)</div></div>
+        <div><div class="setting-label"><i class="ti ti-player-pause"></i> Pausar comprobaciones</div><div class="setting-sub">Deja de comprobar este sitio (no cuenta para uptime)</div></div>
         <label class="toggle"><input type="checkbox" id="e-paused"><span class="toggle-slider"></span></label>
       </div>
     </div>
@@ -1312,7 +1312,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
     <!-- Maintenance tab -->
     <div id="etab-maint" class="tab-panel">
       <div class="setting-row" style="margin-bottom:14px">
-        <label for="e-maint-general"><div class="setting-label">🔧 Mantenimiento general</div><div class="setting-sub">Silencia las alertas de este sitio indefinidamente (p.ej. contenedor parado) hasta que lo desactives. El sitio se sigue comprobando.</div></label>
+        <label for="e-maint-general"><div class="setting-label"><i class="ti ti-tool"></i> Mantenimiento general</div><div class="setting-sub">Silencia las alertas de este sitio indefinidamente (p.ej. contenedor parado) hasta que lo desactives. El sitio se sigue comprobando.</div></label>
         <label class="toggle"><input type="checkbox" id="e-maint-general"><span class="toggle-slider"></span></label>
       </div>
       <div class="settings-section-title" style="margin-bottom:6px">Ventanas programadas</div>
@@ -1331,7 +1331,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
 <div class="modal-bg" id="updateConfirmBg" onclick="closeUpdateConfirm()">
   <div class="modal" onclick="event.stopPropagation()" style="max-width:420px">
     <h2 style="display:flex;align-items:center;gap:8px">
-      <span style="font-size:22px">⚠️</span> Confirmar actualización
+      <span style="font-size:22px;color:var(--warn)"><i class="ti ti-alert-triangle"></i></span> Confirmar actualización
     </h2>
     <p style="font-size:13px;color:var(--text);margin-bottom:14px">
       Vas a aplicar la versión <strong id="uc-version">–</strong>.<br>
@@ -2055,7 +2055,7 @@ const fmtDate=ts=>new Date(ts).toLocaleString('es',{day:'2-digit',month:'2-digit
 const fmtTime=ts=>new Date(ts).toLocaleTimeString('es');
 const rtCls=(ms,up)=>{if(!up)return'dead';if(ms<300)return'fast';if(ms<1200)return'';if(ms<3000)return'slow';return'dead';};
 const uptimeCls=v=>v==null?'':v>=99?'great':v>=95?'warn':'bad';
-const trendTxt=t=>t==='improving'?'↘ Mejorando':t==='degrading'?'↗ Empeorando':'→ Estable';
+const trendTxt=t=>t==='improving'?'<i class="ti ti-trending-down"></i> Mejorando':t==='degrading'?'<i class="ti ti-trending-up"></i> Empeorando':'<i class="ti ti-minus"></i> Estable';
 const trendCls=t=>t==='improving'?'g':t==='degrading'?'r':'';
 const fmtRam=b=>{if(!b)return'–';if(b<1073741824)return(b/1048576).toFixed(0)+'MB';return(b/1073741824).toFixed(2)+'GB';};
 
@@ -2402,15 +2402,15 @@ function renderSiteRow(site){
   const clues=[...new Map((stack?.clues||[]).map(c=>[String(c).toLowerCase(),c])).values()].slice(0,2);
   const tags=clues.map(c=>`<span class="tag">${c}</span>`).join('');
   const siteTags=(site.tags||[]).map(t=>`<span class="tag tag-user">${t}</span>`).join('');
-  const pausedTag=isPaused?'<span class="tag paused-tag">⏸ Pausado</span>':'';
+  const pausedTag=isPaused?'<span class="tag paused-tag"><i class="ti ti-player-pause"></i> Pausado</span>':'';
   const isMaint=site.maintenance||s?.maintenance;
-  const maintTag=isMaint?'<span class="tag" style="border-color:rgba(245,166,35,.5);color:var(--warn)">🔧 Mantenimiento</span>':'';
+  const maintTag=isMaint?'<span class="tag" style="border-color:rgba(245,166,35,.5);color:var(--warn)"><i class="ti ti-tool"></i> Mantenimiento</span>':'';
   const protoWarn=s?.protocolWarning;
-  const protoTag=protoWarn?`<span class="tag" style="border-color:rgba(245,166,35,.5);color:var(--warn)" title="${protoWarn.replace(/"/g,'&quot;')}">⚠ Protocolo</span>`:'';
-  const privateTag=isPrivate?'<span class="tag" style="border-color:rgba(122,125,158,.4);color:var(--muted)">🔒 Oculto</span>':'';
+  const protoTag=protoWarn?`<span class="tag" style="border-color:rgba(245,166,35,.5);color:var(--warn)" title="${protoWarn.replace(/"/g,'&quot;')}"><i class="ti ti-alert-triangle"></i> Protocolo</span>`:'';
+  const privateTag=isPrivate?'<span class="tag" style="border-color:rgba(122,125,158,.4);color:var(--muted)"><i class="ti ti-lock"></i> Oculto</span>':'';
   // Trend
   const trend=st?.trend||'stable';
-  const trendArrow=trend==='improving'?'↘':trend==='degrading'?'↗':'→';
+  const trendArrow=trend==='improving'?'<i class="ti ti-trending-down"></i>':trend==='degrading'?'<i class="ti ti-trending-up"></i>':'<i class="ti ti-minus"></i>';
   const trendTitle=trend==='improving'?'Mejorando':trend==='degrading'?'Empeorando':'Estable';
   // Health score
   const score=computeHealth(site,s,st);
@@ -2557,7 +2557,7 @@ function renderMaintWindows(){
             <input type="time" value="${w.end||'00:00'}" onchange="_editMaintWindows[${i}].end=this.value" style="background:var(--s1);border:1px solid var(--border2);border-radius:5px;padding:3px 6px;color:var(--text);font-size:12px">
           </div>
         </div>
-        <button class="icon-btn del" onclick="removeMaintWindow(${i})" title="Eliminar" style="flex-shrink:0;margin-top:2px">✕</button>
+        <button class="icon-btn del" onclick="removeMaintWindow(${i})" title="Eliminar" style="flex-shrink:0;margin-top:2px"><i class="ti ti-x"></i></button>
       </div>
     </div>`).join('');
 }
@@ -2641,13 +2641,13 @@ function renderDetail(){
   // csvBtn href se actualiza en updateCsvLink() vía refreshRangeView()
   const isPaused=site.paused;
   const pauseBtn=document.getElementById('d-pauseBtn');
-  pauseBtn.textContent=isPaused?'▶ Reanudar':'⏸ Pausar';
+  pauseBtn.innerHTML=isPaused?'<i class="ti ti-player-play"></i> Reanudar':'<i class="ti ti-player-pause"></i> Pausar';
 
   const dot=document.getElementById('d-dot');
   const isDeg=s?.up&&s?.degraded;
   const isMaint=site.maintenance||s?.maintenance;
   dot.className='dot '+(isPaused?'paused':isMaint?'degraded':isDeg?'degraded':s?.up?'up':s?.up===false?'down':'');
-  document.getElementById('d-statusText').textContent=isPaused?'Pausado':isMaint?'🔧 Mantenimiento':isDeg?'Degradado':s?.up?'Operativo':s?.up===false?'CAÍDO':'–';
+  document.getElementById('d-statusText').innerHTML=isPaused?'Pausado':isMaint?'<i class="ti ti-tool"></i> Mantenimiento':isDeg?'Degradado':s?.up?'Operativo':s?.up===false?'CAÍDO':'–';
   document.getElementById('d-statusText').style.color=isPaused?'var(--muted)':isMaint?'var(--warn)':isDeg?'var(--warn)':s?.up?'var(--up)':s?.up===false?'var(--down)':'var(--muted)';
   document.getElementById('d-code').textContent=s?.protocolWarning?`⚠ ${s.protocolWarning}`:s?.statusCode?`HTTP ${s.statusCode}`:s?.error||'';
   document.getElementById('d-code').style.color=s?.protocolWarning?'var(--warn)':'';
@@ -2666,7 +2666,7 @@ function renderDetail(){
 
   const anomaly=s?.anomaly;
   const anomalyHtml=anomaly?`<div class="ir" style="background:rgba(255,170,0,.08);border-radius:6px;padding:5px 7px;margin-top:4px">
-    <div class="ik" style="color:var(--warn)">⚠ Anomalía</div>
+    <div class="ik" style="color:var(--warn)"><i class="ti ti-alert-triangle"></i> Anomalía</div>
     <div class="iv" style="color:var(--warn);font-size:10px">+${anomaly.zScore}σ · ${fmt(anomaly.current)} vs media ${fmt(anomaly.mean)}</div>
   </div>`:'';
   document.getElementById('d-row1').innerHTML=`
@@ -2916,7 +2916,7 @@ async function loadSistemaTab(){
           </div>
           <div style="display:flex;gap:6px;flex-shrink:0">
             <button class="btn btn-sm" title="Descargar backup" style="padding:3px 8px;font-size:12px" onclick="downloadBackup('${b.name}')">⬇</button>
-            <button class="icon-btn del" onclick="deleteBackup('${b.name}')" title="Eliminar este backup">✕</button>
+            <button class="icon-btn del" onclick="deleteBackup('${b.name}')" title="Eliminar este backup"><i class="ti ti-x"></i></button>
           </div>
         </div>`).join('');
     }
@@ -3003,7 +3003,7 @@ async function loadRedTab(){
       +'<div style="background:var(--faint);padding:10px;border-radius:7px"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px">Node ID</div>'
       +'<div style="font-family:var(--mono);font-size:12px;color:var(--accent)">'+(d.nodeId||'–')+'</div></div>'
       +'<div style="background:var(--faint);padding:10px;border-radius:7px"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px">Modo</div>'
-      +'<div style="font-size:12px;font-weight:600">'+(d.isBootstrap?'🌐 Bootstrap':'👤 Nodo')+(d.nodeUrl?'':' · Pasivo')+'</div></div>'
+      +'<div style="font-size:12px;font-weight:600">'+(d.isBootstrap?'<i class="ti ti-world"></i> Bootstrap':'<i class="ti ti-user"></i> Nodo')+(d.nodeUrl?'':' · Pasivo')+'</div></div>'
       +'<div style="background:var(--faint);padding:10px;border-radius:7px"><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px">Peers activos</div>'
       +'<div style="font-family:var(--sans);font-size:22px;font-weight:800;color:'+(d.activePeers>0?'var(--up)':'var(--muted)')+'">'+d.activePeers+'</div>'
       +'<div style="font-size:10px;color:var(--muted)">'+d.totalPeers+' conocidos en total</div></div>'
@@ -3121,7 +3121,7 @@ async function runDiagnose(){
   }catch(e){
     document.getElementById('d-diag-content').textContent='Error: '+e.message;
   }
-  if(btn){btn.disabled=false;btn.textContent='↺ Rediagnosticar';}
+  if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-refresh"></i> Rediagnosticar';}
 }
 
 function renderDiagnostic(d){
@@ -3716,7 +3716,7 @@ function toggleSmtpAccordion(btn) {
   const body  = document.getElementById('smtp-accordion-body');
   const arrow = document.getElementById('smtp-accordion-arrow');
   const open  = body.classList.toggle('open');
-  arrow.textContent = open ? '▴' : '▾';
+  arrow.innerHTML = open ? '<i class="ti ti-chevron-up"></i>' : '<i class="ti ti-chevron-down"></i>';
 }
 
 async function testMail() {
