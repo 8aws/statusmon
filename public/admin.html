@@ -1042,8 +1042,9 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
         <div class="settings-section-title">Backups</div>
         <div id="backups-list">Cargando…</div>
         <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
-          <button class="settings-save" onclick="clearAllBackups()" style="background:var(--faint);border:1px solid var(--border2);color:var(--muted)">Eliminar todos</button>
+          <button class="btn btn-sm" onclick="createBackupNow()" style="background:var(--accent2);border:1px solid var(--accent);color:var(--accent)"><i class="ti ti-archive"></i> Crear backup ahora</button>
           <button class="btn btn-sm" onclick="document.getElementById('restore-file').click()" title="Restaurar desde un backup descargado previamente"><i class="ti ti-arrow-back-up"></i> Restaurar desde backup…</button>
+          <button class="settings-save" onclick="clearAllBackups()" style="background:var(--faint);border:1px solid var(--border2);color:var(--muted)">Eliminar todos</button>
           <input type="file" id="restore-file" accept=".zip" style="display:none" onchange="restoreFromBackup(this)">
         </div>
         <div id="backups-result" style="font-size:10px;margin-top:5px;color:var(--muted)"></div>
@@ -2959,6 +2960,16 @@ async function restoreFromBackup(input){
   input.value='';
 }
 
+async function createBackupNow(){
+  const r=document.getElementById('backups-result');
+  r.style.color='var(--muted)';r.textContent='Creando backup…';
+  try{
+    const d=await(await apiFetch('/api/backups',{method:'POST'})).json();
+    if(d.ok){r.style.color='var(--up)';r.innerHTML='<i class="ti ti-check"></i> Backup creado ('+(d.files||0)+' archivos)';}
+    else{r.style.color='var(--down)';r.textContent='Error: '+(d.error||'desconocido');}
+  }catch(e){r.style.color='var(--down)';r.textContent='Error: '+e.message;}
+  loadSistemaTab();
+}
 async function clearAllBackups(){
   if(!confirm('¿Eliminar TODOS los backups? Esta acción no se puede deshacer.'))return;
   await apiFetch('/api/backups',{method:'DELETE'});
