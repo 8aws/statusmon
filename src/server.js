@@ -64,7 +64,7 @@ function buildZipBuffer(entries) {
 // ──────────────────────────────────────────────────────────────────
 const nodemailer = require('nodemailer');
 
-const APP_VERSION = '5.7.4';
+const APP_VERSION = '5.8.0';
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const netCrypto = require('./network/crypto');

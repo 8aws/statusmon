@@ -5,6 +5,24 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 
 ---
 
+## [5.8.0] — 2026-06-28
+
+Revisión integral de la interfaz (legibilidad, eficiencia de información y elegancia), validada en preview en vivo.
+
+### Added
+- **Ordenación de la lista (admin)** — selector con 6 criterios (manual/arrastre, nombre A-Z, estado con caídos primero, t. respuesta, uptime, nº de caídas), preferencia persistida.
+- **Grupos de etiqueta colapsables** — cada etiqueta se pliega/despliega y recuerda su estado, para ocultar de la vista las webs de una etiqueta.
+- **Iconografía Tabler unificada** — toda la app pasa de la mezcla de emoji/símbolos a un set de iconos de línea coherente, cargado por webfont y **cacheado en el Service Worker** (junto a Google Fonts) para servir desde caché interna tras la primera carga.
+
+### Changed
+- **Color de aviso neón** — el ámbar de degradado/mantenimiento (marrón `#c97a00` en claro / apagado en oscuro) pasa a amarillo-ámbar neón, claramente distinto del rojo.
+- **Tipografía más legible** — micro-labels 8→9px, texto de lectura 11→12px.
+- **Fila de sitio más ligera** — de 6 a 4 iconos de acción; pausar y mantenimiento general se trasladan al editor.
+- **Etiquetas más limpias** — dedupe de tecnologías detectadas (sin `cloudflare`+`Cloudflare`) y distinción visual entre tus etiquetas (acento) y los badges auto-detectados (muted).
+- **Barra de relojes adaptativa (admin)** — si las 3 fuentes están sincronizadas (<1s) muestra solo la hora del servidor; si hay desfase, despliega las tres.
+
+---
+
 ## [5.7.4] — 2026-06-17
 
 ### Added
