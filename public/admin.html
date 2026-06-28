@@ -710,8 +710,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
     <div class="settings-tabs" style="flex-wrap:wrap">
       <button class="settings-tab active" onclick="switchTab('general')">General</button>
       <button class="settings-tab" onclick="switchTab('nas')">Servidor</button>
-      <button class="settings-tab" onclick="switchTab('notif')">Alertas</button>
-      <button class="settings-tab" onclick="switchTab('correo')">Correo</button>
+      <button class="settings-tab" onclick="switchTab('notif')">Notificaciones</button>
       <button class="settings-tab" onclick="switchTab('datos')">Datos</button>
       <button class="settings-tab" onclick="switchTab('sistema')">Sistema</button>
       <button class="settings-tab" onclick="switchTab('red')">Red</button>
@@ -855,6 +854,59 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
           </div>
         </div>
       </div>
+      <div class="settings-section">
+        <div class="settings-section-title">Correo</div>
+        <div class="setting-row">
+          <div class="setting-label">Activar email</div>
+          <label class="toggle"><input type="checkbox" id="cfg-mail-enabled" onchange="toggleCollapse('mail-body',this.checked)"><span class="toggle-slider"></span></label>
+        </div>
+        <div id="mail-body">
+          <div class="field" style="margin-top:8px">
+            <label for="cfg-mail-to">Destinatario</label>
+            <input class="setting-input full" type="email" id="cfg-mail-to" placeholder="admin@tudominio.com">
+          </div>
+          <div class="settings-section-title" style="margin-top:14px">Método de envío</div>
+          <div class="mail-method-grid">
+            <button class="mail-method-btn" data-method="gmail"   onclick="selectMailMethod('gmail')"><span class="mail-method-icon">G</span>Gmail</button>
+            <button class="mail-method-btn" data-method="outlook" onclick="selectMailMethod('outlook')"><span class="mail-method-icon">⊞</span>Outlook</button>
+            <button class="mail-method-btn" data-method="yahoo"   onclick="selectMailMethod('yahoo')"><span class="mail-method-icon">Y!</span>Yahoo</button>
+            <button class="mail-method-btn" data-method="icloud"  onclick="selectMailMethod('icloud')"><span class="mail-method-icon">☁</span>iCloud</button>
+            <button class="mail-method-btn" data-method="direct"  onclick="selectMailMethod('direct')"><span class="mail-method-icon"><i class="ti ti-bolt"></i></span>Directo</button>
+            <button class="mail-method-btn" data-method="smtp"    onclick="selectMailMethod('smtp')"><span class="mail-method-icon"><i class="ti ti-settings"></i></span>Manual</button>
+          </div>
+          <div class="settings-section" id="mail-preset-section" style="display:none">
+            <div id="mail-preset-hint" class="mail-warn" style="color:var(--muted);background:var(--faint);border-color:var(--border);margin-bottom:10px"></div>
+            <div class="field"><label for="cfg-mail-user">Usuario / Email</label><input class="setting-input full" type="email" id="cfg-mail-user" placeholder="tu@gmail.com"></div>
+            <div class="field"><label for="cfg-mail-pass">Contraseña de aplicación</label><input class="setting-input full" type="password" id="cfg-mail-pass"></div>
+            <div class="field"><label for="cfg-mail-from">Remitente (opcional)</label><input class="setting-input full" type="email" id="cfg-mail-from" placeholder="statusmon@gmail.com"></div>
+          </div>
+          <div class="settings-section" id="mail-direct-section" style="display:none">
+            <div class="mail-warn"><i class="ti ti-alert-triangle"></i> El modo <strong>Directo</strong> entrega sin relay SMTP resolviendo los MX del destinatario. No requiere configuración pero los mensajes probablemente irán a spam o serán rechazados por Gmail y Outlook. Recomendado únicamente para redes internas o servidores con PTR y SPF configurados.</div>
+            <div class="field" style="margin-top:10px"><label for="cfg-mail-from-direct">Remitente</label><input class="setting-input full" type="email" id="cfg-mail-from-direct" placeholder="statusmon@tudominio.com"></div>
+          </div>
+          <div class="settings-section" id="mail-smtp-section" style="display:none">
+            <button class="smtp-accordion-btn" onclick="toggleSmtpAccordion(this)">
+              <span>Configuración SMTP</span><span id="smtp-accordion-arrow"><i class="ti ti-chevron-down"></i></span>
+            </button>
+            <div class="smtp-accordion-body" id="smtp-accordion-body">
+              <div style="padding-top:10px">
+                <div class="field"><label for="cfg-smtp-host">Servidor SMTP</label><input class="setting-input full" type="text" id="cfg-smtp-host" placeholder="smtp.tudominio.com"></div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+                  <div class="field"><label for="cfg-smtp-port">Puerto</label><input class="setting-input full" type="number" id="cfg-smtp-port" value="587"></div>
+                  <div class="field"><label>TLS (SSL)<br><label class="toggle" style="margin-top:6px"><input type="checkbox" id="cfg-smtp-secure"><span class="toggle-slider"></span></label></label></div>
+                </div>
+                <div class="field"><label for="cfg-smtp-user">Usuario</label><input class="setting-input full" type="text" id="cfg-smtp-user" placeholder="user@dominio.com"></div>
+                <div class="field"><label for="cfg-smtp-pass">Contraseña</label><input class="setting-input full" type="password" id="cfg-smtp-pass"></div>
+                <div class="field"><label for="cfg-smtp-from">De (From)</label><input class="setting-input full" type="text" id="cfg-smtp-from" placeholder="statusmon@tudominio.com"></div>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:4px">
+            <button class="btn btn-sm" onclick="testMail()">Enviar email de prueba</button>
+            <span id="mail-test-result" style="font-size:12px;color:var(--muted)"></span>
+          </div>
+        </div>
+      </div>
       <!-- Push Notifications -->
       <div class="settings-section">
         <div class="settings-section-title">Push del navegador</div>
@@ -868,70 +920,6 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
           <button class="btn btn-sm" style="color:var(--down);border-color:var(--down)" onclick="clearPushSubscriptions()">Limpiar suscripciones</button>
           <span id="push-clear-result" style="font-size:10px;margin-left:8px;color:var(--muted)"></span>
         </div>
-      </div>
-    </div>
-
-    <!-- Correo -->
-    <div class="tab-panel" id="tab-correo">
-      <div class="settings-section">
-        <div class="settings-section-title">Correo de alertas</div>
-        <div class="setting-row">
-          <div class="setting-label">Activar email</div>
-          <label class="toggle"><input type="checkbox" id="cfg-mail-enabled"><span class="toggle-slider"></span></label>
-        </div>
-        <div class="field" style="margin-top:8px">
-          <label for="cfg-mail-to">Destinatario</label>
-          <input class="setting-input full" type="email" id="cfg-mail-to" placeholder="admin@tudominio.com">
-        </div>
-      </div>
-      <div class="settings-section">
-        <div class="settings-section-title">Método de envío</div>
-        <div class="mail-method-grid">
-          <button class="mail-method-btn" data-method="gmail"   onclick="selectMailMethod('gmail')"><span class="mail-method-icon">G</span>Gmail</button>
-          <button class="mail-method-btn" data-method="outlook" onclick="selectMailMethod('outlook')"><span class="mail-method-icon">⊞</span>Outlook</button>
-          <button class="mail-method-btn" data-method="yahoo"   onclick="selectMailMethod('yahoo')"><span class="mail-method-icon">Y!</span>Yahoo</button>
-          <button class="mail-method-btn" data-method="icloud"  onclick="selectMailMethod('icloud')"><span class="mail-method-icon">☁</span>iCloud</button>
-          <button class="mail-method-btn" data-method="direct"  onclick="selectMailMethod('direct')"><span class="mail-method-icon"><i class="ti ti-bolt"></i></span>Directo</button>
-          <button class="mail-method-btn" data-method="smtp"    onclick="selectMailMethod('smtp')"><span class="mail-method-icon"><i class="ti ti-settings"></i></span>Manual</button>
-        </div>
-      </div>
-
-      <!-- Sección credenciales (presets) -->
-      <div class="settings-section" id="mail-preset-section" style="display:none">
-        <div id="mail-preset-hint" class="mail-warn" style="color:var(--muted);background:var(--faint);border-color:var(--border);margin-bottom:10px"></div>
-        <div class="field"><label for="cfg-mail-user">Usuario / Email</label><input class="setting-input full" type="email" id="cfg-mail-user" placeholder="tu@gmail.com"></div>
-        <div class="field"><label for="cfg-mail-pass">Contraseña de aplicación</label><input class="setting-input full" type="password" id="cfg-mail-pass"></div>
-        <div class="field"><label for="cfg-mail-from">Remitente (opcional)</label><input class="setting-input full" type="email" id="cfg-mail-from" placeholder="statusmon@gmail.com"></div>
-      </div>
-
-      <!-- Aviso modo directo -->
-      <div class="settings-section" id="mail-direct-section" style="display:none">
-        <div class="mail-warn"><i class="ti ti-alert-triangle"></i> El modo <strong>Directo</strong> entrega sin relay SMTP resolviendo los MX del destinatario. No requiere configuración pero los mensajes probablemente irán a spam o serán rechazados por Gmail y Outlook. Recomendado únicamente para redes internas o servidores con PTR y SPF configurados.</div>
-        <div class="field" style="margin-top:10px"><label for="cfg-mail-from-direct">Remitente</label><input class="setting-input full" type="email" id="cfg-mail-from-direct" placeholder="statusmon@tudominio.com"></div>
-      </div>
-
-      <!-- Manual SMTP acordeón -->
-      <div class="settings-section" id="mail-smtp-section" style="display:none">
-        <button class="smtp-accordion-btn" onclick="toggleSmtpAccordion(this)">
-          <span>Configuración SMTP</span><span id="smtp-accordion-arrow"><i class="ti ti-chevron-down"></i></span>
-        </button>
-        <div class="smtp-accordion-body" id="smtp-accordion-body">
-          <div style="padding-top:10px">
-            <div class="field"><label for="cfg-smtp-host">Servidor SMTP</label><input class="setting-input full" type="text" id="cfg-smtp-host" placeholder="smtp.tudominio.com"></div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
-              <div class="field"><label for="cfg-smtp-port">Puerto</label><input class="setting-input full" type="number" id="cfg-smtp-port" value="587"></div>
-              <div class="field"><label>TLS (SSL)<br><label class="toggle" style="margin-top:6px"><input type="checkbox" id="cfg-smtp-secure"><span class="toggle-slider"></span></label></label></div>
-            </div>
-            <div class="field"><label for="cfg-smtp-user">Usuario</label><input class="setting-input full" type="text" id="cfg-smtp-user" placeholder="user@dominio.com"></div>
-            <div class="field"><label for="cfg-smtp-pass">Contraseña</label><input class="setting-input full" type="password" id="cfg-smtp-pass"></div>
-            <div class="field"><label for="cfg-smtp-from">De (From)</label><input class="setting-input full" type="text" id="cfg-smtp-from" placeholder="statusmon@tudominio.com"></div>
-          </div>
-        </div>
-      </div>
-
-      <div style="display:flex;align-items:center;gap:10px;margin-top:4px">
-        <button class="btn btn-sm" onclick="testMail()">Enviar email de prueba</button>
-        <span id="mail-test-result" style="font-size:12px;color:var(--muted)"></span>
       </div>
     </div>
 
@@ -1413,7 +1401,7 @@ function applyNasVisibility(){
 }
 
 function switchTab(name){
-  document.querySelectorAll('.settings-tab').forEach((t,i)=>{const tabs=['general','nas','notif','correo','datos','sistema','red','status-page'];t.classList.toggle('active',tabs[i]===name);});
+  document.querySelectorAll('.settings-tab').forEach((t,i)=>{const tabs=['general','nas','notif','datos','sistema','red','status-page'];t.classList.toggle('active',tabs[i]===name);});
   document.querySelectorAll('#settingsOverlay .tab-panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
   if(name==='sistema'||name==='datos')loadSistemaTab();
@@ -1453,6 +1441,7 @@ async function openSettings(){
   // Correo tab
   const sm = serverCfg.smtp||{};
   document.getElementById('cfg-mail-enabled').checked = sm.enabled||false;
+  toggleCollapse('mail-body', sm.enabled||false);
   document.getElementById('cfg-mail-to').value         = sm.to||'';
   document.getElementById('cfg-mail-user').value       = sm.user||'';
   document.getElementById('cfg-mail-pass').value       = sm.pass||'';
