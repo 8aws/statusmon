@@ -712,6 +712,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
       <button class="settings-tab" onclick="switchTab('nas')">Servidor</button>
       <button class="settings-tab" onclick="switchTab('notif')">Alertas</button>
       <button class="settings-tab" onclick="switchTab('correo')">Correo</button>
+      <button class="settings-tab" onclick="switchTab('datos')">Datos</button>
       <button class="settings-tab" onclick="switchTab('sistema')">Sistema</button>
       <button class="settings-tab" onclick="switchTab('red')">Red</button>
       <button class="settings-tab" onclick="switchTab('status-page')">Estado público</button>
@@ -965,6 +966,37 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
       </div>
 
       <div class="settings-section">
+        <div class="settings-section-title">Actualización</div>
+        <div class="setting-sub" style="margin-bottom:10px">Sube o indica la URL del ZIP de la nueva versión. Se crea un backup de /data automáticamente antes de aplicar. El contenedor se reinicia solo.</div>
+
+        <div id="update-pending-banner" style="display:none;background:var(--accent2);border:1px solid var(--accent);border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+            <div>
+              <span style="color:var(--accent);font-weight:700">↑ Actualización lista</span>
+              <span id="update-pending-ver" style="margin-left:6px;color:var(--muted)"></span>
+            </div>
+            <div style="display:flex;gap:6px">
+              <button class="btn btn-sm" onclick="applyUpdate()" id="btn-apply-update">Aplicar y reiniciar</button>
+              <button class="btn-cancel" style="padding:3px 8px;font-size:12px" onclick="discardUpdate()">Descartar</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+          <input id="update-url" class="setting-input" placeholder="https://…/statusmon-v5.x.y.zip" style="flex:1;min-width:200px;text-align:left">
+          <button class="btn btn-sm" onclick="fetchUpdate()">Descargar</button>
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:8px">— o bien —</div>
+        <input type="file" id="update-file" accept=".zip" style="display:none" onchange="uploadUpdate(this)">
+        <button class="btn btn-sm" onclick="document.getElementById('update-file').click()">Subir ZIP…</button>
+        <div id="update-log" class="update-log"></div>
+      </div>
+
+    </div>
+
+    <!-- Datos -->
+    <div class="tab-panel" id="tab-datos">
+      <div class="settings-section">
         <div class="settings-section-title">Exportar / Importar</div>
         <div class="setting-sub" style="margin-bottom:10px">El bundle incluye todos los sitios y la configuración. Las contraseñas SMTP se excluyen por seguridad.</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -1017,34 +1049,6 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
         <div id="backups-result" style="font-size:10px;margin-top:5px;color:var(--muted)"></div>
         <div id="restore-log" style="font-size:12px;margin-top:6px;display:none"></div>
       </div>
-
-      <div class="settings-section">
-        <div class="settings-section-title">Actualización</div>
-        <div class="setting-sub" style="margin-bottom:10px">Sube o indica la URL del ZIP de la nueva versión. Se crea un backup de /data automáticamente antes de aplicar. El contenedor se reinicia solo.</div>
-
-        <div id="update-pending-banner" style="display:none;background:var(--accent2);border:1px solid var(--accent);border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:12px">
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
-            <div>
-              <span style="color:var(--accent);font-weight:700">↑ Actualización lista</span>
-              <span id="update-pending-ver" style="margin-left:6px;color:var(--muted)"></span>
-            </div>
-            <div style="display:flex;gap:6px">
-              <button class="btn btn-sm" onclick="applyUpdate()" id="btn-apply-update">Aplicar y reiniciar</button>
-              <button class="btn-cancel" style="padding:3px 8px;font-size:12px" onclick="discardUpdate()">Descartar</button>
-            </div>
-          </div>
-        </div>
-
-        <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">
-          <input id="update-url" class="setting-input" placeholder="https://…/statusmon-v5.x.y.zip" style="flex:1;min-width:200px;text-align:left">
-          <button class="btn btn-sm" onclick="fetchUpdate()">Descargar</button>
-        </div>
-        <div style="font-size:12px;color:var(--muted);margin-bottom:8px">— o bien —</div>
-        <input type="file" id="update-file" accept=".zip" style="display:none" onchange="uploadUpdate(this)">
-        <button class="btn btn-sm" onclick="document.getElementById('update-file').click()">Subir ZIP…</button>
-        <div id="update-log" class="update-log"></div>
-      </div>
-
     </div>
 
     <!-- Red -->
@@ -1407,10 +1411,10 @@ function applyNasVisibility(){
 }
 
 function switchTab(name){
-  document.querySelectorAll('.settings-tab').forEach((t,i)=>{const tabs=['general','nas','notif','correo','sistema','red','status-page'];t.classList.toggle('active',tabs[i]===name);});
+  document.querySelectorAll('.settings-tab').forEach((t,i)=>{const tabs=['general','nas','notif','correo','datos','sistema','red','status-page'];t.classList.toggle('active',tabs[i]===name);});
   document.querySelectorAll('#settingsOverlay .tab-panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
-  if(name==='sistema')loadSistemaTab();
+  if(name==='sistema'||name==='datos')loadSistemaTab();
   if(name==='red')loadRedTab();
   if(name==='status-page')loadStatusPageTab();
 }
