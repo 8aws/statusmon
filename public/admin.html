@@ -260,6 +260,10 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
 .smtp-accordion-body{overflow:hidden;max-height:0;transition:max-height .28s ease}
 .smtp-accordion-body.open{max-height:400px}
 .settings-section-title{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.14em;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.settings-section-title.collapsible{cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;transition:color .15s}
+.settings-section-title.collapsible:hover{color:var(--text)}
+.settings-section-title .sec-chev{transition:transform .15s;font-size:12px}
+.settings-section-title.collapsible.collapsed .sec-chev{transform:rotate(-90deg)}
 .setting-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--faint);gap:12px}
 .setting-row:last-child{border-bottom:none}
 .setting-label{font-size:12px;color:var(--text)}
@@ -708,22 +712,37 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
   <div class="settings-panel" onclick="event.stopPropagation()">
     <h2>Ajustes <button onclick="closeSettings()">×</button></h2>
     <div class="settings-tabs" style="flex-wrap:wrap">
-      <button class="settings-tab active" onclick="switchTab('general')">General</button>
-      <button class="settings-tab" onclick="switchTab('nas')">Servidor</button>
+      <button class="settings-tab active" onclick="switchTab('nas')">Servidor</button>
       <button class="settings-tab" onclick="switchTab('notif')">Notificaciones</button>
       <button class="settings-tab" onclick="switchTab('datos')">Datos</button>
       <button class="settings-tab" onclick="switchTab('sistema')">Sistema</button>
       <button class="settings-tab" onclick="switchTab('red')">Red</button>
-      <button class="settings-tab" onclick="switchTab('status-page')">Estado público</button>
+      <button class="settings-tab" onclick="switchTab('status-page')">Apariencia</button>
     </div>
 
-    <!-- General -->
-    <div class="tab-panel active" id="tab-general">
+    <!-- NAS -->
+    <div class="tab-panel active" id="tab-nas">
       <div class="settings-section">
-        <div class="settings-section-title">Apariencia</div>
+        <div class="settings-section-title">Panel del servidor</div>
         <div class="setting-row">
-          <label for="cfg-dark"><div class="setting-label">Tema oscuro</div></label>
-          <label class="toggle"><input type="checkbox" id="cfg-dark"><span class="toggle-slider"></span></label>
+          <div class="setting-label">Mostrar barra</div>
+          <label class="toggle"><input type="checkbox" id="cfg-nas" checked><span class="toggle-slider"></span></label>
+        </div>
+        <div class="setting-row">
+          <div class="setting-label">RAM</div>
+          <label class="toggle"><input type="checkbox" id="cfg-nas-ram" checked><span class="toggle-slider"></span></label>
+        </div>
+        <div class="setting-row">
+          <div class="setting-label">CPU</div>
+          <label class="toggle"><input type="checkbox" id="cfg-nas-cpu" checked><span class="toggle-slider"></span></label>
+        </div>
+        <div class="setting-row">
+          <div class="setting-label">Disco</div>
+          <label class="toggle"><input type="checkbox" id="cfg-nas-disk" checked><span class="toggle-slider"></span></label>
+        </div>
+        <div class="setting-row">
+          <div class="setting-label">Temperatura / Carga</div>
+          <label class="toggle"><input type="checkbox" id="cfg-nas-load" checked><span class="toggle-slider"></span></label>
         </div>
       </div>
       <div class="settings-section">
@@ -778,33 +797,6 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
         <div class="setting-row">
           <div><div class="setting-label">Peers solo en memoria</div><div class="setting-sub">peers.json se guarda solo al apagar</div></div>
           <label class="toggle"><input type="checkbox" id="cfg-peers-memory"><span class="toggle-slider"></span></label>
-        </div>
-      </div>
-    </div>
-
-    <!-- NAS -->
-    <div class="tab-panel" id="tab-nas">
-      <div class="settings-section">
-        <div class="settings-section-title">Panel del servidor</div>
-        <div class="setting-row">
-          <div class="setting-label">Mostrar barra</div>
-          <label class="toggle"><input type="checkbox" id="cfg-nas" checked><span class="toggle-slider"></span></label>
-        </div>
-        <div class="setting-row">
-          <div class="setting-label">RAM</div>
-          <label class="toggle"><input type="checkbox" id="cfg-nas-ram" checked><span class="toggle-slider"></span></label>
-        </div>
-        <div class="setting-row">
-          <div class="setting-label">CPU</div>
-          <label class="toggle"><input type="checkbox" id="cfg-nas-cpu" checked><span class="toggle-slider"></span></label>
-        </div>
-        <div class="setting-row">
-          <div class="setting-label">Disco</div>
-          <label class="toggle"><input type="checkbox" id="cfg-nas-disk" checked><span class="toggle-slider"></span></label>
-        </div>
-        <div class="setting-row">
-          <div class="setting-label">Temperatura / Carga</div>
-          <label class="toggle"><input type="checkbox" id="cfg-nas-load" checked><span class="toggle-slider"></span></label>
         </div>
       </div>
     </div>
@@ -1094,6 +1086,18 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
     <!-- Estado público -->
     <div class="tab-panel" id="tab-status-page">
       <div class="settings-section">
+        <div class="settings-section-title collapsible" onclick="toggleSection(this)"><span>Admin · solo en tu navegador</span><i class="ti ti-chevron-down sec-chev"></i></div>
+        <div class="sec-content">
+          <div class="setting-row">
+            <label for="cfg-dark"><div class="setting-label">Tema oscuro</div></label>
+            <label class="toggle"><input type="checkbox" id="cfg-dark"><span class="toggle-slider"></span></label>
+          </div>
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-section-title collapsible collapsed" onclick="toggleSection(this)"><span>Estado público · lo ven todos los visitantes</span><i class="ti ti-chevron-down sec-chev"></i></div>
+        <div class="sec-content" style="display:none">
+      <div class="settings-section">
         <div class="settings-section-title">Preajustes</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:4px">
           <button class="btn btn-sm" onclick="applyStatusPreset('light')">☀ Claro</button>
@@ -1169,7 +1173,9 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
       </div>
       <div style="margin-top:4px">
         <div id="sp-preview" style="border:1px solid var(--border);border-radius:8px;padding:12px;background:var(--faint);font-size:12px;color:var(--muted);text-align:center">Vista previa —  guarda para ver cambios en /status</div>
+      </div>        </div>
       </div>
+
     </div>
 
     <button class="settings-save" id="btn-save-settings" onclick="saveSettings()">Guardar ajustes</button>
@@ -1401,7 +1407,7 @@ function applyNasVisibility(){
 }
 
 function switchTab(name){
-  document.querySelectorAll('.settings-tab').forEach((t,i)=>{const tabs=['general','nas','notif','datos','sistema','red','status-page'];t.classList.toggle('active',tabs[i]===name);});
+  document.querySelectorAll('.settings-tab').forEach((t,i)=>{const tabs=['nas','notif','datos','sistema','red','status-page'];t.classList.toggle('active',tabs[i]===name);});
   document.querySelectorAll('#settingsOverlay .tab-panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
   if(name==='sistema'||name==='datos')loadSistemaTab();
@@ -2118,6 +2124,7 @@ async function deleteDetail(){if(!currentId||!confirm('¿Eliminar?'))return;awai
 async function checkNow(id,e){e.stopPropagation();await apiFetch(`/api/check/${id}`,{method:'POST'});await fetchAll();}
 async function checkNowDetail(){if(!currentId)return;await apiFetch(`/api/check/${currentId}`,{method:'POST'});await fetchSiteData(currentId);renderDetail();}
 function toggleCollapse(id,show){const el=document.getElementById(id);if(el)el.style.display=show?'':'none';}
+function toggleSection(h){const c=h.nextElementSibling;if(!c)return;const open=c.style.display!=='none';c.style.display=open?'none':'';h.classList.toggle('collapsed',open);}
 async function togglePause(id,e){e.stopPropagation();await apiFetch(`/api/sites/${id}/pause`,{method:'POST'});await fetchAll();}
 async function togglePauseDetail(){if(!currentId)return;await apiFetch(`/api/sites/${currentId}/pause`,{method:'POST'});await fetchAll();renderDetail();}
 async function toggleMaintenance(id,e){e.stopPropagation();await apiFetch(`/api/sites/${id}/maintenance`,{method:'POST'});await fetchAll();}
