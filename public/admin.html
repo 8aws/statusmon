@@ -781,14 +781,6 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
           <label class="toggle"><input type="checkbox" id="cfg-peers-memory"><span class="toggle-slider"></span></label>
         </div>
       </div>
-
-      <div class="settings-section">
-        <div class="settings-section-title">Mantenimiento</div>
-        <div class="setting-row">
-          <div><div class="setting-label">Modo mantenimiento</div><div class="setting-sub">Silencia todas las alertas temporalmente</div></div>
-          <label class="toggle"><input type="checkbox" id="cfg-maint"><span class="toggle-slider"></span></label>
-        </div>
-      </div>
     </div>
 
     <!-- NAS -->
@@ -831,27 +823,36 @@ header{display:flex;align-items:center;justify-content:space-between;padding:24p
         </div>
       </div>
       <div class="settings-section">
+        <div class="settings-section-title">Mantenimiento</div>
+        <div class="setting-row">
+          <div><div class="setting-label">Modo mantenimiento</div><div class="setting-sub">Silencia todas las alertas temporalmente</div></div>
+          <label class="toggle"><input type="checkbox" id="cfg-maint"><span class="toggle-slider"></span></label>
+        </div>
+      </div>
+      <div class="settings-section">
         <div class="settings-section-title">Webhook global</div>
         <div class="setting-row">
           <div class="setting-label">Activar webhook</div>
-          <label class="toggle"><input type="checkbox" id="cfg-wh-enabled"><span class="toggle-slider"></span></label>
+          <label class="toggle"><input type="checkbox" id="cfg-wh-enabled" onchange="toggleCollapse('wh-body',this.checked)"><span class="toggle-slider"></span></label>
         </div>
-        <div class="setting-row">
-          <label for="cfg-wh-type"><div class="setting-label">Tipo</div></label>
-          <select class="setting-input" id="cfg-wh-type" style="width:130px;text-align:left">
-            <option value="discord">Discord</option>
-            <option value="slack">Slack</option>
-            <option value="telegram">Telegram</option>
-            <option value="generic">Genérico</option>
-          </select>
-        </div>
-        <div class="field" style="margin-top:8px">
-          <label for="cfg-wh-url">URL del webhook (o Bot Token para Telegram)</label>
-          <input class="setting-input full" type="text" id="cfg-wh-url" placeholder="https://...">
-        </div>
-        <div class="field" id="tg-chatid-field" style="display:none">
-          <label for="cfg-tg-chatid">Telegram Chat ID</label>
-          <input class="setting-input full" type="text" id="cfg-tg-chatid" placeholder="-100123456789">
+        <div id="wh-body">
+          <div class="setting-row">
+            <label for="cfg-wh-type"><div class="setting-label">Tipo</div></label>
+            <select class="setting-input" id="cfg-wh-type" style="width:130px;text-align:left">
+              <option value="discord">Discord</option>
+              <option value="slack">Slack</option>
+              <option value="telegram">Telegram</option>
+              <option value="generic">Genérico</option>
+            </select>
+          </div>
+          <div class="field" style="margin-top:8px">
+            <label for="cfg-wh-url">URL del webhook (o Bot Token para Telegram)</label>
+            <input class="setting-input full" type="text" id="cfg-wh-url" placeholder="https://...">
+          </div>
+          <div class="field" id="tg-chatid-field" style="display:none">
+            <label for="cfg-tg-chatid">Telegram Chat ID</label>
+            <input class="setting-input full" type="text" id="cfg-tg-chatid" placeholder="-100123456789">
+          </div>
         </div>
       </div>
       <!-- Push Notifications -->
@@ -1444,6 +1445,7 @@ async function openSettings(){
   document.getElementById('cfg-maint').checked=serverCfg.maintenanceMode||false;
   document.getElementById('cfg-alertChecks').value=serverCfg.alertAfterChecks||2;
   document.getElementById('cfg-wh-enabled').checked=serverCfg.webhook?.enabled||false;
+  toggleCollapse('wh-body',serverCfg.webhook?.enabled||false);
   document.getElementById('cfg-wh-type').value=serverCfg.webhook?.type||'discord';
   document.getElementById('cfg-wh-url').value=serverCfg.webhook?.url||'';
   document.getElementById('cfg-tg-chatid').value=serverCfg.webhook?.telegramChatId||'';
@@ -2126,6 +2128,7 @@ async function deleteSite(id,e){e.stopPropagation();if(!confirm('¿Eliminar?'))r
 async function deleteDetail(){if(!currentId||!confirm('¿Eliminar?'))return;await apiFetch(`/api/sites/${currentId}`,{method:'DELETE'});await fetchAll();showList();}
 async function checkNow(id,e){e.stopPropagation();await apiFetch(`/api/check/${id}`,{method:'POST'});await fetchAll();}
 async function checkNowDetail(){if(!currentId)return;await apiFetch(`/api/check/${currentId}`,{method:'POST'});await fetchSiteData(currentId);renderDetail();}
+function toggleCollapse(id,show){const el=document.getElementById(id);if(el)el.style.display=show?'':'none';}
 async function togglePause(id,e){e.stopPropagation();await apiFetch(`/api/sites/${id}/pause`,{method:'POST'});await fetchAll();}
 async function togglePauseDetail(){if(!currentId)return;await apiFetch(`/api/sites/${currentId}/pause`,{method:'POST'});await fetchAll();renderDetail();}
 async function toggleMaintenance(id,e){e.stopPropagation();await apiFetch(`/api/sites/${id}/maintenance`,{method:'POST'});await fetchAll();}
